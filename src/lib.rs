@@ -65,7 +65,7 @@ impl Dmsoft{
         self.obj.Invoke(rgdispid, ptr::null(), LOCALE_USER_DEFAULT, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut())?;
         
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let a = result.Anonymous.intVal;
+        let a = result.Anonymous.lVal;
         Ok(a)
         
     }
