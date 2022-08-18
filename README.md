@@ -1,7 +1,7 @@
 
 
-# Rust 调用dm
+# Rust dm 绑定
 
 
-* 仿照 VC++ 使用 windows-rs 调用大漠插件
+* 仿照 VC++ 使用 windows-rs 绑定大漠插件
 
