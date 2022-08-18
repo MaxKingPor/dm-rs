@@ -1,6 +1,6 @@
 use std::{mem::ManuallyDrop, ptr, collections::HashMap, sync::Mutex};
 
-use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0}, Ole}, Foundation::BSTR}, core::{InParam, PWSTR, HSTRING}};
+use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0}, Ole::{self, VariantInit}}, Foundation::BSTR}, core::{InParam, PWSTR, HSTRING}};
 
 // 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 // https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
@@ -71,6 +71,36 @@ impl Dmsoft{
         Ok(result.try_into().unwrap())
     }
 
+    // long dmsoft::FindStr(long x1,long y1,long x2,long y2,const TCHAR * str,const TCHAR * color,double sim,long * x,long * y)
+
+    pub unsafe fn FindStr(&self, x1:i32, y1:i32, x2:i32,y2:i32, str:&str, color:&str, sim:f64, x:*mut i32, y:*mut i32)-> Result<i32> {
+        const NAME:&'static str = "FindStr";
+        let mut px = VARIANT::default();
+        let mut py = VARIANT::default();
+        let mut args = [
+            Dmsoft::pvarVal(&mut py),
+            Dmsoft::pvarVal(&mut px),
+            Dmsoft::doubleVar(sim),
+            Dmsoft::bstrVal(color),
+            Dmsoft::bstrVal(str),
+            Dmsoft::longVar(y2),
+            Dmsoft::longVar(x2),
+            Dmsoft::longVar(y1),
+            Dmsoft::longVar(x1)
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        if !x.is_null() {
+            *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        }
+        if !y.is_null() {
+            *y = py.Anonymous.Anonymous.Anonymous.lVal;
+        }
+        
+        Ok(result.Anonymous.lVal)
+    
+    }
+
     // TODO: 其他函数映射
 }
 
@@ -113,10 +143,15 @@ impl Dmsoft{
     pub unsafe fn longVar(var:i32) -> VARIANT{
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_I4.0 as u16;
-        arg.Anonymous.intVal = var;
+        arg.Anonymous.lVal = var;
         VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
     }
-
+    pub unsafe fn pvarVal(var:*mut VARIANT) -> VARIANT{
+        let mut arg = VARIANT_0_0::default();
+        arg.vt = (Ole::VT_BYREF.0| Ole::VT_VARIANT.0) as u16;
+        arg.Anonymous.pvarVal = var;
+        VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
+    }
     pub unsafe fn doubleVar(var:f64) -> VARIANT{
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_R8.0 as u16;
