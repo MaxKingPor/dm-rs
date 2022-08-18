@@ -72,7 +72,6 @@ impl Dmsoft{
     }
 
     // long dmsoft::FindStr(long x1,long y1,long x2,long y2,const TCHAR * str,const TCHAR * color,double sim,long * x,long * y)
-
     pub unsafe fn FindStr(&self, x1:i32, y1:i32, x2:i32,y2:i32, str:&str, color:&str, sim:f64, x:*mut i32, y:*mut i32)-> Result<i32> {
         const NAME:&'static str = "FindStr";
         let mut px = VARIANT::default();
@@ -101,6 +100,15 @@ impl Dmsoft{
     
     }
 
+    // long dmsoft::GetResultCount(const TCHAR * str)
+    pub unsafe fn GetResultCount(&self, str: &str) -> Result<i32>{
+        const NAME:&'static str = "GetResultCount";
+        let mut args = [Dmsoft::bstrVal(str)];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let a = result.Anonymous.lVal;
+        Ok(a)
+    }
     // TODO: 其他函数映射
 }
 
