@@ -31,6 +31,8 @@ fn main() {
         let result = dm.FindStr(0, 0, 2000, 2000, "1", "000000-000000", 1.0, &mut x, &mut y);
         println!("FindStr: {:?} x:{}, y:{}", result, x, y);
 
+
+
     }
     
     println!("#################################")

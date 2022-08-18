@@ -4,8 +4,8 @@ use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIA
 
 // 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 // https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
-const LOCALE_USER_DEFAULT:u32 = 0x0400;
-const EMPTY_ARGS: [VARIANT;0] = [];
+pub const LOCALE_USER_DEFAULT:u32 = 0x0400;
+pub const EMPTY_ARGS: [VARIANT;0] = [];
 pub struct Dmsoft{
     obj: IDispatch,
     catch: Mutex<HashMap<&'static str, i32>>
@@ -32,6 +32,7 @@ impl Dmsoft{
         })
     }
 
+    // CString dmsoft::Ver()
     #[allow(const_item_mutation)]
     pub unsafe fn Ver(&self) -> Result<String>{
         const NAME:&'static str = "Ver";
@@ -41,7 +42,8 @@ impl Dmsoft{
         Ok(result.try_into().unwrap())
 
     }
-
+    
+    // long dmsoft::SetPath(const TCHAR * path)
     pub unsafe fn SetPath(&self, path:&str) -> Result<i32>{
         const NAME:&'static str = "SetPath";
         
@@ -54,6 +56,7 @@ impl Dmsoft{
         
     }
 
+    // CString dmsoft::Ocr(long x1,long y1,long x2,long y2,const TCHAR * color,double sim)
     pub unsafe fn Ocr(&self, x1:i32,y1:i32,x2:i32,y2:i32,color:&str, sim:f64) -> Result<String>{
         const NAME:&'static str = "Ocr";
 
@@ -109,6 +112,57 @@ impl Dmsoft{
         let a = result.Anonymous.lVal;
         Ok(a)
     }
+    
+    // long dmsoft::GetResultPos(const TCHAR * str,long index,long * x,long * y) 
+    pub unsafe fn GetResultPos(&self, str:&str, index:i32, x:*mut i32, y:*mut i32) -> Result<i32>{
+        const NAME:&'static str = "GetResultPos";
+        let mut px = VARIANT::default();
+        let mut py = VARIANT::default();
+        let mut args = [
+            Dmsoft::pvarVal(&mut py),
+            Dmsoft::pvarVal(&mut px),
+            Dmsoft::longVar(index),
+            Dmsoft::bstrVal(str)
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        if !x.is_null() {
+            *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        }
+        if !y.is_null() {
+            *y = py.Anonymous.Anonymous.Anonymous.lVal;
+        }
+        
+        Ok(result.Anonymous.lVal)
+    }
+
+    // long dmsoft::StrStr(const TCHAR * s,const TCHAR * str)
+    // 未在API文档中找到此函数说明
+    pub(crate) unsafe fn StrStr(&self, s:&str, str:&str) -> Result<i32>{
+        const NAME:&'static str = "StrStr";
+        let mut args = [
+            Dmsoft::bstrVal(str),
+            Dmsoft::bstrVal(s)
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        Ok(result.Anonymous.lVal)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // TODO: 其他函数映射
 }
 
