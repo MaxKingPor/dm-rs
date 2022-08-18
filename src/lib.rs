@@ -1,6 +1,10 @@
 use std::{mem::ManuallyDrop, ptr};
 
-use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0}, Ole}, Globalization, Foundation::BSTR}, core::{InParam, PWSTR, HSTRING}};
+use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0}, Ole}, Foundation::BSTR}, core::{InParam, PWSTR, HSTRING}};
+
+// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
+// https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
+const LOCALE_USER_DEFAULT:u32 = 0x0400;
 
 pub struct Dmsoft{
     obj: IDispatch
@@ -22,14 +26,14 @@ impl Dmsoft{
             if RGDISPID == -1{
                 let name = windows::w!("Ver");
                 let name = PWSTR::from_raw(name.as_ptr() as *mut _);
-                self.obj.GetIDsOfNames(ptr::null(), &name, 1, 1, &mut RGDISPID)?;
+                self.obj.GetIDsOfNames(ptr::null(), &name, 1, LOCALE_USER_DEFAULT, &mut RGDISPID)?;
             };
             RGDISPID
         };
 
         let dispparams = DISPPARAMS{ rgvarg: ptr::null_mut(), rgdispidNamedArgs: ptr::null_mut(), cArgs: 0, cNamedArgs: 0 };
         let mut result = VARIANT::default();   
-        self.obj.Invoke(rgdispid, ptr::null(), Globalization::LOCALE_ALL, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut())?;
+        self.obj.Invoke(rgdispid, ptr::null(), LOCALE_USER_DEFAULT, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut())?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let a = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
 
@@ -44,7 +48,7 @@ impl Dmsoft{
             if RGDISPID == -1{
                 let name = windows::w!("SetPath");
                 let name = PWSTR::from_raw(name.as_ptr() as *mut _);
-                self.obj.GetIDsOfNames(ptr::null(), &name, 1, 1, &mut RGDISPID)?;
+                self.obj.GetIDsOfNames(ptr::null(), &name, 1, LOCALE_USER_DEFAULT, &mut RGDISPID)?;
             };
             RGDISPID
         };
@@ -58,7 +62,7 @@ impl Dmsoft{
         
         let dispparams = DISPPARAMS{ rgvarg: args.as_mut_ptr(), rgdispidNamedArgs: ptr::null_mut(), cArgs: 1, cNamedArgs: 0 };
         let mut result = VARIANT::default();   
-        self.obj.Invoke(rgdispid, ptr::null(), Globalization::LOCALE_ALL, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut())?;
+        self.obj.Invoke(rgdispid, ptr::null(), LOCALE_USER_DEFAULT, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut())?;
         
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let a = result.Anonymous.intVal;
