@@ -19,11 +19,13 @@ fn main() {
         let dm = Dmsoft::new().unwrap();
 
         let s = dm.Ver().unwrap();
-        println!("{}", s);
+        println!("Ver: {}", s);
         let result = dm.SetPath("./").unwrap();
 
-        println!("{:?}", result);
+        println!("SetPath: {:?}", result);
 
+        let result = dm.Ocr(0,0,2000,2000,"ffffff-000000",1.0);
+        println!("Ocr: {:?}", result);
         
     }
     
