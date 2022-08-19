@@ -625,6 +625,51 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
     
+    /// 按下鼠标右键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::RightClick()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.RightClick().unwrap();
+    /// ```
+    pub unsafe fn RightClick(&self) -> Result<i32>{
+        const NAME: &'static str = "RightClick";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+
+    /// 按下鼠标中键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::MiddleClick()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.MiddleClick().unwrap();
+    /// ```
+    pub unsafe fn MiddleClick(&self) -> Result<i32>{
+        const NAME: &'static str = "MiddleClick";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+
+
+
+
 
     // TODO: 其他函数映射
 }
