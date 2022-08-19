@@ -15,6 +15,10 @@ use windows::{
     },
 };
 
+mod keymap;
+
+pub use keymap::KeyMap;
+
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 ///
 /// https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
@@ -505,19 +509,41 @@ impl Dmsoft {
     /// `i32`: 0: 失败 1: 成功
     /// # Examples
     /// ```
+    /// let dm = Dmsoft::new();
     /// dm.Capture(0,0,2000,2000,"screen.bmp").unwrap();
     /// ```
-    pub unsafe fn Capture(&self, x1: i32, y1: i32,x2: i32,y2: i32, file_name:&str)-> Result<i32>{
+    pub unsafe fn Capture(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        file_name: &str,
+    ) -> Result<i32> {
         const NAME: &'static str = "Capture";
         let mut args = [
             Dmsoft::bstrVal(file_name),
             Dmsoft::longVar(y2),
             Dmsoft::longVar(x2),
             Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1)
+            Dmsoft::longVar(x1),
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        Ok(result.Anonymous.lVal)
+    }
+
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::KeyPress(long vk)
+    /// ```
+    pub unsafe fn KeyPress<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
+        const NAME: &'static str = "KeyPress";
+        let mut args = [Dmsoft::longVar(vk.get_id())];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
         Ok(result.Anonymous.lVal)
     }
 
