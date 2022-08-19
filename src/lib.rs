@@ -604,7 +604,27 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
-
+    /// 按下鼠标左键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::LeftClick()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.LeftClick().unwrap();
+    /// ```
+    pub unsafe fn LeftClick(&self)-> Result<i32>{
+        const NAME: &'static str = "LeftClick";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+    
 
     // TODO: 其他函数映射
 }
