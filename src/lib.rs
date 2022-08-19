@@ -455,6 +455,13 @@ impl Dmsoft {
     /// `pic_name:&str`: 图片文件名
     /// `color_format:&str`: 颜色格式串. 注意，RGB和HSV,以及灰度格式都支持.
     /// `sim:f64`: 相似度,取值范围0.1-1.0
+    /// # Return
+    /// * `String`: 返回识别到的字符串
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let result = dm.OcrInFile(0,0,2000,2000,"test.bmp","000000-000000",1.0).unwrap();
+    /// ```
     pub unsafe fn OcrInFile(
         &self,
         x1: i32,
