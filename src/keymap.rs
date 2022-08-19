@@ -1,29 +1,14 @@
+//! 大漠键盘映射
+
 #![allow(dead_code)]
 #![warn(missing_docs)]
 
-///
-pub struct KeyMap<'a> {
-    key_str: &'a str,
-    id: i32,
-}
-
-impl<'a> KeyMap<'a> {
-    ///
-    pub fn new(key_str: &'a str, id: i32) -> Self {
-        Self { key_str, id }
-    }
-    ///
-    pub fn get_key_str(&self) -> &'a str {
-        self.key_str
-    }
-    ///
-    pub fn get_id(&self) -> i32 {
-        self.id
-    }
-}
+use super::KeyMap;
 
 macro_rules! key {
     ($ident:ident, $key_str:expr, $id:expr) => {
+        /// 按键:
+        #[doc=$key_str]
         pub const $ident: KeyMap<'static> = KeyMap {
             key_str: $key_str,
             id: $id,

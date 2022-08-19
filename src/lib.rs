@@ -15,9 +15,9 @@ use windows::{
     },
 };
 
-mod keymap;
+#[cfg(feature = "keymap")]
+pub mod keymap;
 
-pub use keymap::KeyMap;
 
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 ///
@@ -533,9 +533,19 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 按下指定的虚拟键码
     /// # The function prototype
     /// ```C++
     /// long dmsoft::KeyPress(long vk)
+    /// ```
+    /// # Args
+    /// * `vk:KeyMap<'a>`:  虚拟按键码
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.KeyPress(keymap::KEY_A).unwrap();
     /// ```
     pub unsafe fn KeyPress<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
         const NAME: &'static str = "KeyPress";
@@ -546,6 +556,32 @@ impl Dmsoft {
 
         Ok(result.Anonymous.lVal)
     }
+
+    /// 按住指定的虚拟键码
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::KeyDown(long vk)
+    /// ```
+    /// # Args
+    /// * `vk:KeyMap<'a>`:  虚拟按键码
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.KeyDown(keymap::KEY_A).unwrap();
+    /// ```
+    pub unsafe fn KeyDown<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
+        const NAME: &'static str = "KeyDown";
+        let mut args = [Dmsoft::longVar(vk.get_id())];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
+
+
 
     // TODO: 其他函数映射
 }
@@ -645,5 +681,28 @@ impl Dmsoft {
                 Anonymous: ManuallyDrop::new(arg),
             },
         }
+    }
+}
+
+
+
+///
+pub struct KeyMap<'a> {
+    key_str: &'a str,
+    id: i32,
+}
+
+impl<'a> KeyMap<'a> {
+    ///
+    pub fn new(key_str: &'a str, id: i32) -> Self {
+        Self { key_str, id }
+    }
+    ///
+    pub fn get_key_str(&self) -> &'a str {
+        self.key_str
+    }
+    ///
+    pub fn get_id(&self) -> i32 {
+        self.id
     }
 }

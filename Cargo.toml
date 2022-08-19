@@ -1,5 +1,5 @@
 [package]
-name = "dm-rs"
+name = "dm"
 version = "0.1.0"
 edition = "2021"
 
@@ -19,3 +19,6 @@ features = [
     # "Win32_Globalization"
 ]
 
+[features]
+default = ["keymap"]
+keymap = []
