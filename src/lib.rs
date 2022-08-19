@@ -688,6 +688,27 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 按住鼠标左键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::LeftDown()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.LeftDown().unwrap();
+    /// ```
+    pub unsafe fn LeftDown(&self) -> Result<i32>{
+        const NAME: &'static str = "LeftDown";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+
 
 
 
