@@ -856,7 +856,56 @@ impl Dmsoft {
         Ok(result.try_into().unwrap())
     }
 
+    /// 获取(x,y)的颜色,颜色返回格式"BBGGRR"
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::GetColorBGR(long x,long y)
+    /// ```
+    /// # Args
+    /// * `x:i32`: X坐标
+    /// * `y:i32`: Y坐标
+    /// # Return
+    /// `String` 颜色字符串(注意这里都是小写字符，和工具相匹配)
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.GetColorBGR(0,0).unwrap();
+    /// ```
+    pub unsafe fn GetColorBGR(&self, x:i32,y:i32) -> Result<String>{
+        const NAME: &'static str = "GetColorBGR";
+        let mut args = [
+            Dmsoft::longVar(y),
+            Dmsoft::longVar(x),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
+    /// 把RGB的颜色格式转换为BGR(按键格式)
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::RGB2BGR(const TCHAR * rgb_color)
+    /// ```
+    /// # Args
+    /// * `rgb_color:&str`: rgb格式的颜色字符串
+    /// # Return
+    /// `String` BGR格式的字符串
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.RGB2BGR("00FF00").unwrap();
+    /// ```
+    pub unsafe fn RGB2BGR(&self, rgb_color:&str) -> Result<String>{
+        const NAME: &'static str = "RGB2BGR";
+        let mut args = [Dmsoft::bstrVal(rgb_color)];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
 
+    
 
 
 
