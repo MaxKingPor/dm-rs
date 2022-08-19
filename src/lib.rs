@@ -772,6 +772,37 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 把鼠标移动到目的点(x,y)
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::MoveTo(long x,long y)
+    /// ```
+    /// # Args
+    /// * `x:i32`: X坐标
+    /// * `y:i32`: Y坐标
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.MoveTo(0,0).unwrap();
+    /// ```
+    pub unsafe fn MoveTo(&self,x: i32, y: i32) -> Result<i32>{
+        const NAME: &'static str = "MoveTo";
+        let mut args = [
+            Dmsoft::longVar(y),
+            Dmsoft::longVar(x),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
+
+
+
+
+
 
 
 
