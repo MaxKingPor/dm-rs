@@ -2,24 +2,31 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-use std::{mem::ManuallyDrop, ptr, collections::HashMap, sync::Mutex};
+use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex};
 
-use windows::{Win32::{System::{Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0}, Ole}, Foundation::BSTR}, core::{InParam, PWSTR, HSTRING}};
+use windows::{
+    core::{InParam, HSTRING, PWSTR},
+    Win32::{
+        Foundation::BSTR,
+        System::{
+            Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
+            Ole,
+        },
+    },
+};
 
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
-/// 
+///
 /// https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
-pub const LOCALE_USER_DEFAULT:u32 = 0x0400;
-
+pub const LOCALE_USER_DEFAULT: u32 = 0x0400;
 
 /// dm.dmsoft API 绑定
-pub struct Dmsoft{
+pub struct Dmsoft {
     /// dm.dmsoft 链接实例
     obj: IDispatch,
     /// Invoke ID 缓存
-    catch: Mutex<HashMap<&'static str, i32>>
+    catch: Mutex<HashMap<&'static str, i32>>,
 }
-
 
 /// 异常枚举
 #[derive(Debug)]
@@ -27,7 +34,7 @@ pub enum Error {
     /// 调用Windows API 时产生的Error
     WinError(windows::core::Error),
     /// 从缓存区获取的 Invoke ID 为 `-1`
-    IdError
+    IdError,
 }
 
 /// API Result
@@ -35,19 +42,22 @@ type Result<T> = core::result::Result<T, Error>;
 
 /// 大漠插件绑定
 #[allow(non_snake_case)]
-impl Dmsoft{
-
+impl Dmsoft {
     /// 新建一个 dm.dmsoft API 绑定实例
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
     /// ```
-    pub unsafe fn new() -> windows::core::Result<Self>{
+    pub unsafe fn new() -> windows::core::Result<Self> {
         let guid = Com::CLSIDFromProgID(windows::w!("dm.dmsoft"))?;
-        let r = Com::CoCreateInstance::<'_, InParam<'_,_>, IDispatch>(&guid, InParam::null(), Com::CLSCTX_ALL)?;
-        Ok(Self{
+        let r = Com::CoCreateInstance::<'_, InParam<'_, _>, IDispatch>(
+            &guid,
+            InParam::null(),
+            Com::CLSCTX_ALL,
+        )?;
+        Ok(Self {
             obj: r,
-            catch: Mutex::new(HashMap::new())
+            catch: Mutex::new(HashMap::new()),
         })
     }
 
@@ -57,10 +67,10 @@ impl Dmsoft{
     /// CString dmsoft::Ver()
     /// ```
     /// # Args
-    /// 
+    ///
     /// # Return
     /// `String` 当前插件的版本描述字符串
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
@@ -69,29 +79,28 @@ impl Dmsoft{
     /// println!("Ver: {}", ver);
     /// ```
     #[allow(const_item_mutation)]
-    pub unsafe fn Ver(&self) -> Result<String>{
-        const NAME:&'static str = "Ver";
+    pub unsafe fn Ver(&self) -> Result<String> {
+        const NAME: &'static str = "Ver";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
         Ok(result.try_into().unwrap())
-
     }
-    
+
     /// 设置全局路径,设置了此路径后,所有接口调用中,相关的文件都相对于此路径. 比如图片,字库等.
     /// # The function prototype
     /// ```C++
     /// long dmsoft::SetPath(const TCHAR * path)
     /// ```
-    /// 
+    ///
     /// # Args
     /// * `path` 字符串: 路径,可以是相对路径,也可以是绝对路径
-    /// 
+    ///
     /// ## Return
     /// `i32`: 0: 失败 1: 成功
-    /// 
+    ///
     /// # Examples
-    /// ``` 
+    /// ```
     /// let dm = Dmsoft::new();
     /// // 以下代码把全局路径设置到了c盘根目录
     /// let result = dm.SetPath(r"c:\").unwrap();
@@ -99,22 +108,21 @@ impl Dmsoft{
     /// let result = dm.SetPath(r".\MyData").unwrap();
     /// // 以上，如果exe在c:\test\a.exe 那么，就相当于把路径设置到了c:\test\MyData
     /// ```
-    pub unsafe fn SetPath(&self, path:&str) -> Result<i32>{
-        const NAME:&'static str = "SetPath";
-        
+    pub unsafe fn SetPath(&self, path: &str) -> Result<i32> {
+        const NAME: &'static str = "SetPath";
+
         let mut args = [Dmsoft::bstrVal(path)];
 
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let a = result.Anonymous.lVal;
         Ok(a)
-        
     }
 
     /// 识别屏幕范围(x1,y1,x2,y2)内符合color_format的字符串,并且相似度为sim,sim取值范围(0.1-1.0),
     ///
     /// 这个值越大越精确,越大速度越快,越小速度越慢,请斟酌使用!
-    /// 
+    ///
     /// # The function prototype
     /// ```C++
     /// CString dmsoft::Ocr(long x1,long y1,long x2,long y2,const TCHAR * color,double sim)
@@ -126,7 +134,7 @@ impl Dmsoft{
     /// * `y2:i32`: 区域的右下Y坐标
     /// * `color_format:&str`: 颜色格式串. 可以包含换行分隔符,语法是","后加分割字符串. 具体可以查看下面的示例.注意，RGB和HSV,以及灰度格式都支持.
     /// * `sim:f64`:相似度,取值范围0.1-1.0
-    /// 
+    ///
     /// ## Return
     /// * `String` 返回识别到的字符串
     /// # Examples
@@ -145,8 +153,16 @@ impl Dmsoft{
     /// //识别后,每行字符串用指定字符分割 比如用"|"字符分割
     /// let s = dm.Ocr(0,0,2000,2000,"9f2e3f-000000,|",1.0).unwrap();
     /// ```
-    pub unsafe fn Ocr(&self, x1:i32,y1:i32,x2:i32,y2:i32,color:&str, sim:f64) -> Result<String>{
-        const NAME:&'static str = "Ocr";
+    pub unsafe fn Ocr(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        color: &str,
+        sim: f64,
+    ) -> Result<String> {
+        const NAME: &'static str = "Ocr";
 
         let mut args = [
             Dmsoft::doubleVar(sim),
@@ -154,7 +170,7 @@ impl Dmsoft{
             Dmsoft::longVar(y2),
             Dmsoft::longVar(x2),
             Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1)
+            Dmsoft::longVar(x1),
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -185,17 +201,17 @@ impl Dmsoft{
     /// ```
     /// let dm = Dmsoft::new();
     /// let (mut x,mut y) = (0,0);
-    /// 
+    ///
     /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安","9f2e3f-000000",1.0,&mut x,&mut y).unwrap();
     /// if x >= 0 and y >= 0{
     ///     dm.MoveTo(x, y);
     /// };
-    /// 
+    ///
     /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安|洛阳","9f2e3f-000000",1.0,&mut x,&mut y).unwrap();
     /// if x >= 0 and y >= 0{
     ///     dm.MoveTo(x, y);
     /// };
-    /// 
+    ///
     /// // 查找时,对多行文本进行换行,换行分隔符是"|". 语法是在","后增加换行字符串.任意字符串都可以.
     /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安|洛阳","9f2e3f-000000,|",1.0,&mut x,&mut y).unwrap();
     /// if x >= 0 and y >= 0{
@@ -205,8 +221,19 @@ impl Dmsoft{
     /// # Note:
     /// * 此函数的原理是先Ocr识别，然后再查找。所以速度比FindStrFast要慢，尤其是在字库 很大，或者模糊度不为1.0时。\
     /// * 一般字库字符数量小于100左右，模糊度为1.0时，用FindStr要快一些,否则用FindStrFast.
-    pub unsafe fn FindStr(&self, x1:i32, y1:i32, x2:i32,y2:i32, str:&str, color:&str, sim:f64, x:*mut i32, y:*mut i32)-> Result<i32> {
-        const NAME:&'static str = "FindStr";
+    pub unsafe fn FindStr(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        str: &str,
+        color: &str,
+        sim: f64,
+        x: *mut i32,
+        y: *mut i32,
+    ) -> Result<i32> {
+        const NAME: &'static str = "FindStr";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
         let mut args = [
@@ -218,7 +245,7 @@ impl Dmsoft{
             Dmsoft::longVar(y2),
             Dmsoft::longVar(x2),
             Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1)
+            Dmsoft::longVar(x1),
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -228,9 +255,8 @@ impl Dmsoft{
         if !y.is_null() {
             *y = py.Anonymous.Anonymous.Anonymous.lVal;
         }
-        
+
         Ok(result.Anonymous.lVal)
-    
     }
 
     /// 对插件部分接口的返回值进行解析,并返回ret中的坐标个数
@@ -238,62 +264,68 @@ impl Dmsoft{
     /// ```C++
     /// long dmsoft::GetResultCount(const TCHAR * str)
     /// ```
-    /// 
+    ///
     /// # Args
     /// * `str:&str` 部分接口的返回串
     /// # Return
     /// `i32` 返回ret中的坐标个数
-    /// 
+    ///
     /// # Examples
-    /// ``` 
+    /// ```
     /// let dm = Dmsoft::new();
-    /// 
+    ///
     /// let s = dm.FindColorEx(0,0,2000,2000,"123456-000000|abcdef-202020",1.0,0).unwrap();
     /// let count = dm.GetResultCount(s).unwrap();
     /// ```
-    pub unsafe fn GetResultCount(&self, str: &str) -> Result<i32>{
-        const NAME:&'static str = "GetResultCount";
+    pub unsafe fn GetResultCount(&self, str: &str) -> Result<i32> {
+        const NAME: &'static str = "GetResultCount";
         let mut args = [Dmsoft::bstrVal(str)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let a = result.Anonymous.lVal;
         Ok(a)
     }
-    
+
     /// 对插件部分接口的返回值进行解析,并根据指定的第index个坐标,返回具体的值
     /// # The function prototype
     /// ```C++
-    /// long dmsoft::GetResultPos(const TCHAR * str,long index,long * x,long * y) 
+    /// long dmsoft::GetResultPos(const TCHAR * str,long index,long * x,long * y)
     /// ```
     /// # Args
     /// `ret:&str`: 部分接口的返回串
     /// `index:i32`: 第几个坐标
     /// `x:*mut i32`: 返回X坐标
     /// `y:*mut i32`: 返回Y坐标
-    /// 
+    ///
     /// # Return
     /// `i32`: 0: 失败 1: 成功
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
     /// let (mut x,mut y) = (0,0);
-    /// 
+    ///
     /// let s = dm.FindColorEx(0,0,2000,2000,"123456-000000|abcdef-202020",1.0,0).unwrap();
     /// let count = dm.GetResultCount(s)
     /// for i in 0..count{
     ///     let dm_ret = dm.GetResultPos(s,i,&mut x,&mut y).unwrap();
     /// }
     /// ```
-    pub unsafe fn GetResultPos(&self, str:&str, index:i32, x:*mut i32, y:*mut i32) -> Result<i32>{
-        const NAME:&'static str = "GetResultPos";
+    pub unsafe fn GetResultPos(
+        &self,
+        str: &str,
+        index: i32,
+        x: *mut i32,
+        y: *mut i32,
+    ) -> Result<i32> {
+        const NAME: &'static str = "GetResultPos";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
         let mut args = [
             Dmsoft::pvarVal(&mut py),
             Dmsoft::pvarVal(&mut px),
             Dmsoft::longVar(index),
-            Dmsoft::bstrVal(str)
+            Dmsoft::bstrVal(str),
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -303,7 +335,7 @@ impl Dmsoft{
         if !y.is_null() {
             *y = py.Anonymous.Anonymous.Anonymous.lVal;
         }
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -312,25 +344,21 @@ impl Dmsoft{
     /// ```C++
     /// long dmsoft::StrStr(const TCHAR * s,const TCHAR * str)
     /// ```
-    pub unsafe fn StrStr(&self, s:&str, str:&str) -> Result<i32>{
-        const NAME:&'static str = "StrStr";
-        let mut args = [
-            Dmsoft::bstrVal(str),
-            Dmsoft::bstrVal(s)
-        ];
+    pub unsafe fn StrStr(&self, s: &str, str: &str) -> Result<i32> {
+        const NAME: &'static str = "StrStr";
+        let mut args = [Dmsoft::bstrVal(str), Dmsoft::bstrVal(s)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         Ok(result.Anonymous.lVal)
     }
-
 
     /// 未在API文档中找到此函数说明
     /// # The function prototype
     /// ```C++
     /// long dmsoft::SendCommand(const TCHAR * cmd)
     /// ```
-    pub unsafe fn SendCommand(&self, cmd: &str) -> Result<i32>{
-        const NAME:&'static str = "SendCommand";
+    pub unsafe fn SendCommand(&self, cmd: &str) -> Result<i32> {
+        const NAME: &'static str = "SendCommand";
         let mut args = [Dmsoft::bstrVal(cmd)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -338,20 +366,20 @@ impl Dmsoft{
     }
 
     /// 表示使用哪个字库文件进行识别(index范围:0-99)
-    /// 
+    ///
     /// 设置之后，永久生效，除非再次设定
-    /// 
+    ///
     /// # The function prototype
     /// ```C++
     /// long dmsoft::UseDict(long index)
     /// ```
-    /// 
+    ///
     /// # Args
     /// * `index:i32`: 字库编号(0-99)
-    /// 
+    ///
     /// # Return
     /// `i32`: 0: 失败 1: 成功
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
@@ -359,32 +387,31 @@ impl Dmsoft{
     /// ss = dm.Ocr(0,0,2000,2000,"FFFFFF-000000",1.0).unwrap();
     /// dm_ret = dm.UseDict(0).unwrap();
     /// ```
-    pub unsafe fn UseDict(&self, index: i32) -> Result<i32>{
-        const NAME:&'static str = "UseDict";
+    pub unsafe fn UseDict(&self, index: i32) -> Result<i32> {
+        const NAME: &'static str = "UseDict";
         let mut args = [Dmsoft::longVar(index)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         Ok(result.Anonymous.lVal)
     }
 
-
     /// 获取注册在系统中的dm.dll的路径.
     /// # The function prototype
     /// ```C++
     /// CString dmsoft::GetBasePath()
     /// ```
-    /// 
+    ///
     /// # Args
     /// # Return
     /// `String`: 返回dm.dll所在路径
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
     /// let base_path = dm.GetBasePath().unwrap();
     /// ```
-    pub unsafe fn GetBasePath(&self) -> Result<String>{
-        const NAME:&'static str = "GetBasePath";
+    pub unsafe fn GetBasePath(&self) -> Result<String> {
+        const NAME: &'static str = "GetBasePath";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -401,55 +428,81 @@ impl Dmsoft{
     /// # Return
     /// `i32`: 0: 失败 1: 成功
     /// # Examples
-    /// ``` 
+    /// ```
     /// let dm = Dmsoft::new();
     /// dm.SetDictPwd("1234").unwrap();
     /// ```
-    /// # Note: 
+    /// # Note:
     /// * 如果使用了多字库,所有字库的密码必须一样. 此函数必须在SetDict之前调用,否则会解密失败.
-    pub unsafe fn SetDictPwd(&self, pwd: &str) -> Result<i32>{
-        const NAME:&'static str = "SetDictPwd";
+    pub unsafe fn SetDictPwd(&self, pwd: &str) -> Result<i32> {
+        const NAME: &'static str = "SetDictPwd";
         let mut args = [Dmsoft::bstrVal(pwd)];
         let result = self.Invoke(NAME, &mut args).unwrap();
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         Ok(result.Anonymous.lVal)
-
     }
 
+    /// 识别位图中区域(x1,y1,x2,y2)的文字
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::OcrInFile(long x1,long y1,long x2,long y2,const TCHAR * pic_name,const TCHAR * color,double sim)
+    /// ```
+    /// # Args
+    /// `x1:i32`: 区域的左上X坐标
+    /// `y1:i32`: 区域的左上Y坐标
+    /// `x2:i32`: 区域的右下X坐标
+    /// `y2:i32`: 区域的右下Y坐标
+    /// `pic_name:&str`: 图片文件名
+    /// `color_format:&str`: 颜色格式串. 注意，RGB和HSV,以及灰度格式都支持.
+    /// `sim:f64`: 相似度,取值范围0.1-1.0
+    pub unsafe fn OcrInFile(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        pic_name: &str,
+        color: &str,
+        sim: f64,
+    ) -> Result<String> {
+        const NAME: &'static str = "OcrInFile";
 
+        let mut args = [
+            Dmsoft::doubleVar(sim),
+            Dmsoft::bstrVal(color),
+            Dmsoft::bstrVal(pic_name),
+            Dmsoft::longVar(y2),
+            Dmsoft::longVar(x2),
+            Dmsoft::longVar(y1),
+            Dmsoft::longVar(x1),
+        ];
 
-
-
-
-
-
-
-
-
-
-
-
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
 
     // TODO: 其他函数映射
 }
 
-
 /// 辅助函数
 #[allow(non_snake_case)]
-impl Dmsoft{
-
-    /// 通过COM Function 名称 快捷调用 
+impl Dmsoft {
+    /// 通过COM Function 名称 快捷调用
     /// # Args
     /// * `name:&'static str`: COM Function name
     /// * `args: &mut [VARIANT]` COM Function arguments
-    pub unsafe fn Invoke(&self, name:&'static str, args: &mut [VARIANT]) -> Result<VARIANT>{
+    pub unsafe fn Invoke(&self, name: &'static str, args: &mut [VARIANT]) -> Result<VARIANT> {
         let mut map = self.catch.lock().unwrap();
-        let rgdispid = *map.entry(name).or_insert_with_key(|key|{
+        let rgdispid = *map.entry(name).or_insert_with_key(|key| {
             let mut id = -1;
             let name = HSTRING::from(*key);
             let func_name = PWSTR::from_raw(name.as_ptr() as *mut _);
             // 在调试时解决 expect
-            self.obj.GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT, &mut id).expect("调用 GetIDsOfNames 获取ID 异常: ");
+            self.obj
+                .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT, &mut id)
+                .expect("调用 GetIDsOfNames 获取ID 异常: ");
             id
         });
         drop(map);
@@ -457,53 +510,76 @@ impl Dmsoft{
             return Err(Error::IdError);
         };
 
-        let mut result = VARIANT::default();   
-        let dispparams = DISPPARAMS{ rgvarg: args.as_mut_ptr(), rgdispidNamedArgs: ptr::null_mut(), cArgs: args.len() as u32, cNamedArgs: 0 };
-        if let Err(e) = self.obj.Invoke(rgdispid, ptr::null(), LOCALE_USER_DEFAULT, Ole::DISPATCH_METHOD as u16, &dispparams, &mut result, ptr::null_mut(), ptr::null_mut()) {
+        let mut result = VARIANT::default();
+        let dispparams = DISPPARAMS {
+            rgvarg: args.as_mut_ptr(),
+            rgdispidNamedArgs: ptr::null_mut(),
+            cArgs: args.len() as u32,
+            cNamedArgs: 0,
+        };
+        if let Err(e) = self.obj.Invoke(
+            rgdispid,
+            ptr::null(),
+            LOCALE_USER_DEFAULT,
+            Ole::DISPATCH_METHOD as u16,
+            &dispparams,
+            &mut result,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ) {
             return Err(Error::WinError(e));
         };
         Ok(result)
     }
 
-
     /// 从 &str 构建一个 VT_BSTR VARIANT
-    pub unsafe fn bstrVal(var:&str) -> VARIANT{
+    pub unsafe fn bstrVal(var: &str) -> VARIANT {
         let s = BSTR::from_raw(HSTRING::from(var).as_ptr());
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_BSTR.0 as u16;
         arg.Anonymous.bstrVal = ManuallyDrop::new(s);
-        VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
+        VARIANT {
+            Anonymous: VARIANT_0 {
+                Anonymous: ManuallyDrop::new(arg),
+            },
+        }
     }
 
-
     /// 从 i32 构建一个 VT_I4 VARIANT
-    pub unsafe fn longVar(var:i32) -> VARIANT{
+    pub unsafe fn longVar(var: i32) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_I4.0 as u16;
         arg.Anonymous.lVal = var;
-        VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
+        VARIANT {
+            Anonymous: VARIANT_0 {
+                Anonymous: ManuallyDrop::new(arg),
+            },
+        }
     }
 
-    /// VARIANT 指针 
+    /// VARIANT 指针
     /// pvalVal中存放了另外一个VARIANTTARG的指针。这个被引用的VARIANTARG不能是VT_VARIANT | VT_BYREF类型。
     /// VT_BYREF|VT_VARIANT VARIANT
-    pub unsafe fn pvarVal(var:*mut VARIANT) -> VARIANT{
+    pub unsafe fn pvarVal(var: *mut VARIANT) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
-        arg.vt = (Ole::VT_BYREF.0| Ole::VT_VARIANT.0) as u16;
+        arg.vt = (Ole::VT_BYREF.0 | Ole::VT_VARIANT.0) as u16;
         arg.Anonymous.pvarVal = var;
-        VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
+        VARIANT {
+            Anonymous: VARIANT_0 {
+                Anonymous: ManuallyDrop::new(arg),
+            },
+        }
     }
 
     /// 从 f64 构建一个 VT_R8 VARIANT
-    pub unsafe fn doubleVar(var:f64) -> VARIANT{
+    pub unsafe fn doubleVar(var: f64) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_R8.0 as u16;
         arg.Anonymous.dblVal = var;
-        VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
+        VARIANT {
+            Anonymous: VARIANT_0 {
+                Anonymous: ManuallyDrop::new(arg),
+            },
+        }
     }
-
-
 }
-
-
-
