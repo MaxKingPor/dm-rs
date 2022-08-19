@@ -829,6 +829,32 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 获取(x,y)的颜色,颜色返回格式"RRGGBB",注意,和按键的颜色格式相反
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::GetColor(long x,long y)
+    /// ```
+    /// # Args
+    /// * `x:i32`: X坐标
+    /// * `y:i32`: Y坐标
+    /// # Return
+    /// `String` 颜色字符串(注意这里都是小写字符，和工具相匹配)
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.GetColor(0,0).unwrap();
+    /// ```
+    pub unsafe fn GetColor(&self, x:i32,y:i32) -> Result<String>{
+        const NAME: &'static str = "GetColor";
+        let mut args = [
+            Dmsoft::longVar(y),
+            Dmsoft::longVar(x),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
 
 
 
