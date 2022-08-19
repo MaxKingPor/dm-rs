@@ -391,8 +391,37 @@ impl Dmsoft{
         Ok(result.try_into().unwrap())
     }
 
+    /// 设置字库的密码,在SetDict前调用,目前的设计是,所有字库通用一个密码.
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::SetDictPwd(const TCHAR * pwd)
+    /// ```
+    /// # Args
+    /// * `pwd: &str`: 字库密码
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ``` 
+    /// let dm = Dmsoft::new();
+    /// dm.SetDictPwd("1234").unwrap();
+    /// ```
+    /// # Note: 
+    /// * 如果使用了多字库,所有字库的密码必须一样. 此函数必须在SetDict之前调用,否则会解密失败.
+    pub unsafe fn SetDictPwd(&self, pwd: &str) -> Result<i32>{
+        const NAME:&'static str = "SetDictPwd";
+        let mut args = [Dmsoft::bstrVal(pwd)];
+        let result = self.Invoke(NAME, &mut args).unwrap();
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        Ok(result.Anonymous.lVal)
 
-    
+    }
+
+
+
+
+
+
+
 
 
 
