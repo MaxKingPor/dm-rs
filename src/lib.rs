@@ -448,13 +448,13 @@ impl Dmsoft {
     /// CString dmsoft::OcrInFile(long x1,long y1,long x2,long y2,const TCHAR * pic_name,const TCHAR * color,double sim)
     /// ```
     /// # Args
-    /// `x1:i32`: 区域的左上X坐标
-    /// `y1:i32`: 区域的左上Y坐标
-    /// `x2:i32`: 区域的右下X坐标
-    /// `y2:i32`: 区域的右下Y坐标
-    /// `pic_name:&str`: 图片文件名
-    /// `color_format:&str`: 颜色格式串. 注意，RGB和HSV,以及灰度格式都支持.
-    /// `sim:f64`: 相似度,取值范围0.1-1.0
+    /// * `x1:i32`: 区域的左上X坐标
+    /// * `y1:i32`: 区域的左上Y坐标
+    /// * `x2:i32`: 区域的右下X坐标
+    /// * `y2:i32`: 区域的右下Y坐标
+    /// * `pic_name:&str`: 图片文件名
+    /// * `color_format:&str`: 颜色格式串. 注意，RGB和HSV,以及灰度格式都支持.
+    /// * `sim:f64`: 相似度,取值范围0.1-1.0
     /// # Return
     /// * `String`: 返回识别到的字符串
     /// # Examples
@@ -488,6 +488,37 @@ impl Dmsoft {
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
         Ok(result.try_into().unwrap())
+    }
+
+    /// 抓取指定区域(x1, y1, x2, y2)的图像,保存为file(24位位图)
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::Capture(long x1,long y1,long x2,long y2,const TCHAR * file_name)
+    /// ```
+    /// # Args
+    /// * `x1:i32`: 区域的左上X坐标
+    /// * `y1:i32`: 区域的左上Y坐标
+    /// * `x2:i32`: 区域的右下X坐标
+    /// * `y2:i32`: 区域的右下Y坐标
+    /// * `file:&str`: 保存的文件名,保存的地方一般为SetPath中设置的目录 当然这里也可以指定全路径名.
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// dm.Capture(0,0,2000,2000,"screen.bmp").unwrap();
+    /// ```
+    pub unsafe fn Capture(&self, x1: i32, y1: i32,x2: i32,y2: i32, file_name:&str)-> Result<i32>{
+        const NAME: &'static str = "Capture";
+        let mut args = [
+            Dmsoft::bstrVal(file_name),
+            Dmsoft::longVar(y2),
+            Dmsoft::longVar(x2),
+            Dmsoft::longVar(y1),
+            Dmsoft::longVar(x1)
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        Ok(result.Anonymous.lVal)
     }
 
     // TODO: 其他函数映射
