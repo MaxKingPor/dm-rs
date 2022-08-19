@@ -929,14 +929,46 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.UnBindWindow().unwrap();
     /// ```
-    pub unsafe fn UnBindWindow(&self) -> Result<i32>{
+    pub unsafe fn UnBindWindow(&self) -> Result<i32> {
         const NAME: &'static str = "UnBindWindow";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
         Ok(result.Anonymous.lVal)
     }
-    
+
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::CmpColor(long x,long y,const TCHAR * color,double sim)
+    /// ```
+    /// # Args
+    /// * `x:i32`: X坐标
+    /// * `y:i32`: Y坐标
+    /// * `color:&str`: 颜色字符串,可以支持偏色,多色,例如 "ffffff-202020|000000-000000" 这个表示白色偏色为202020,和黑色偏色为000000.颜色最多支持10种颜色组合. 注意，这里只支持RGB颜色.
+    /// * `sim:f64`: 相似度(0.1-1.0)
+    /// # Return
+    /// `i32`: 0: 颜色匹配 1: 颜色不匹配
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.CmpColor(200,300,"000000-000000|ff00ff-101010",0.9).unwrap();
+    /// ```
+    pub unsafe fn CmpColor(&self, x: i32, y: i32, color: &str, sim: f64) -> Result<i32> {
+        const NAME: &'static str = "UnBindWindow";
+        let mut args = [
+            Dmsoft::doubleVar(sim),
+            Dmsoft::bstrVal(color),
+            Dmsoft::longVar(y),
+            Dmsoft::longVar(x),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
+
+
+
 
 
 
