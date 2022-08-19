@@ -730,6 +730,28 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 按住鼠标右键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::RightDown()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.RightDown().unwrap();
+    /// ```
+    pub unsafe fn RightDown(&self) -> Result<i32>{
+        const NAME: &'static str = "RightDown";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+
+
 
 
 
