@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
 use std::{mem::ManuallyDrop, ptr, collections::HashMap, sync::Mutex};
@@ -270,7 +271,7 @@ impl Dmsoft{
     /// `x:*mut i32`: 返回X坐标
     /// `y:*mut i32`: 返回Y坐标
     /// 
-    /// ## Return
+    /// # Return
     /// `i32`: 0: 失败 1: 成功
     /// 
     /// # Examples
@@ -348,7 +349,7 @@ impl Dmsoft{
     /// # Args
     /// * `index:i32`: 字库编号(0-99)
     /// 
-    /// ## Return
+    /// # Return
     /// `i32`: 0: 失败 1: 成功
     /// 
     /// # Examples
@@ -367,6 +368,31 @@ impl Dmsoft{
     }
 
 
+    /// 获取注册在系统中的dm.dll的路径.
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::GetBasePath()
+    /// ```
+    /// 
+    /// # Args
+    /// # Return
+    /// `String`: 返回dm.dll所在路径
+    /// 
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let base_path = dm.GetBasePath().unwrap();
+    /// ```
+    pub unsafe fn GetBasePath(&self) -> Result<String>{
+        const NAME:&'static str = "GetBasePath";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
+
+
+    
 
 
 
@@ -382,6 +408,11 @@ impl Dmsoft{
 /// 辅助函数
 #[allow(non_snake_case)]
 impl Dmsoft{
+
+    /// 通过COM Function 名称 快捷调用 
+    /// # Args
+    /// * `name:&'static str`: COM Function name
+    /// * `args: &mut [VARIANT]` COM Function arguments
     pub unsafe fn Invoke(&self, name:&'static str, args: &mut [VARIANT]) -> Result<VARIANT>{
         let mut map = self.catch.lock().unwrap();
         let rgdispid = *map.entry(name).or_insert_with_key(|key|{
@@ -405,6 +436,8 @@ impl Dmsoft{
         Ok(result)
     }
 
+
+    /// 从 &str 构建一个 VT_BSTR VARIANT
     pub unsafe fn bstrVal(var:&str) -> VARIANT{
         let s = BSTR::from_raw(HSTRING::from(var).as_ptr());
         let mut arg = VARIANT_0_0::default();
@@ -414,18 +447,25 @@ impl Dmsoft{
     }
 
 
+    /// 从 i32 构建一个 VT_I4 VARIANT
     pub unsafe fn longVar(var:i32) -> VARIANT{
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_I4.0 as u16;
         arg.Anonymous.lVal = var;
         VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
     }
+
+    /// VARIANT 指针 
+    /// pvalVal中存放了另外一个VARIANTTARG的指针。这个被引用的VARIANTARG不能是VT_VARIANT | VT_BYREF类型。
+    /// VT_BYREF|VT_VARIANT VARIANT
     pub unsafe fn pvarVal(var:*mut VARIANT) -> VARIANT{
         let mut arg = VARIANT_0_0::default();
         arg.vt = (Ole::VT_BYREF.0| Ole::VT_VARIANT.0) as u16;
         arg.Anonymous.pvarVal = var;
         VARIANT{ Anonymous: VARIANT_0{Anonymous:ManuallyDrop::new(arg)} }
     }
+
+    /// 从 f64 构建一个 VT_R8 VARIANT
     pub unsafe fn doubleVar(var:f64) -> VARIANT{
         let mut arg = VARIANT_0_0::default();
         arg.vt = Ole::VT_R8.0 as u16;
