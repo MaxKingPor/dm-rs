@@ -751,6 +751,26 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 弹起鼠标右键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::RightUp()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.RightUp().unwrap();
+    /// ```
+    pub unsafe fn RightUp(&self) -> Result<i32>{
+        const NAME: &'static str = "RightUp";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
 
 
 
