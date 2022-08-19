@@ -667,6 +667,27 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 双击鼠标左键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::LeftDoubleClick()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.LeftDoubleClick().unwrap();
+    /// ```
+    pub unsafe fn LeftDoubleClick(&self) -> Result<i32>{
+        const NAME: &'static str = "LeftDoubleClick";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        
+        Ok(result.Anonymous.lVal)
+    }
+
 
 
 
