@@ -916,6 +916,26 @@ impl Dmsoft {
         Ok(result.try_into().unwrap())
     }
 
+    /// 解除绑定窗口,并释放系统资源.一般在OnScriptExit调用
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::UnBindWindow()
+    /// ```
+    /// # Args
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.UnBindWindow().unwrap();
+    /// ```
+    pub unsafe fn UnBindWindow(&self) -> Result<i32>{
+        const NAME: &'static str = "UnBindWindow";
+        let result = self.Invoke(NAME, &mut [])?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
     
 
 
