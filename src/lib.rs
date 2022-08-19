@@ -18,7 +18,6 @@ use windows::{
 #[cfg(feature = "keymap")]
 pub mod keymap;
 
-
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 ///
 /// https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
@@ -581,6 +580,30 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 弹起来虚拟键
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::KeyUp(long vk)
+    /// ```
+    /// # Args
+    /// * `vk:KeyMap<'a>`:  虚拟按键码
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.KeyUp(keymap::KEY_A).unwrap();
+    /// ```
+    pub unsafe fn KeyUp<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
+        const NAME: &'static str = "KeyUp";
+        let mut args = [Dmsoft::longVar(vk.get_id())];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
+
 
 
     // TODO: 其他函数映射
@@ -683,8 +706,6 @@ impl Dmsoft {
         }
     }
 }
-
-
 
 ///
 pub struct KeyMap<'a> {
