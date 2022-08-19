@@ -617,14 +617,14 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.LeftClick().unwrap();
     /// ```
-    pub unsafe fn LeftClick(&self)-> Result<i32>{
+    pub unsafe fn LeftClick(&self) -> Result<i32> {
         const NAME: &'static str = "LeftClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
-    
+
     /// 按下鼠标右键
     /// # The function prototype
     /// ```C++
@@ -638,11 +638,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.RightClick().unwrap();
     /// ```
-    pub unsafe fn RightClick(&self) -> Result<i32>{
+    pub unsafe fn RightClick(&self) -> Result<i32> {
         const NAME: &'static str = "RightClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -659,11 +659,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.MiddleClick().unwrap();
     /// ```
-    pub unsafe fn MiddleClick(&self) -> Result<i32>{
+    pub unsafe fn MiddleClick(&self) -> Result<i32> {
         const NAME: &'static str = "MiddleClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -680,11 +680,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.LeftDoubleClick().unwrap();
     /// ```
-    pub unsafe fn LeftDoubleClick(&self) -> Result<i32>{
+    pub unsafe fn LeftDoubleClick(&self) -> Result<i32> {
         const NAME: &'static str = "LeftDoubleClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -701,11 +701,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.LeftDown().unwrap();
     /// ```
-    pub unsafe fn LeftDown(&self) -> Result<i32>{
+    pub unsafe fn LeftDown(&self) -> Result<i32> {
         const NAME: &'static str = "LeftDown";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -722,11 +722,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.LeftUp().unwrap();
     /// ```
-    pub unsafe fn LeftUp(&self) -> Result<i32>{
+    pub unsafe fn LeftUp(&self) -> Result<i32> {
         const NAME: &'static str = "LeftUp";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -743,11 +743,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.RightDown().unwrap();
     /// ```
-    pub unsafe fn RightDown(&self) -> Result<i32>{
+    pub unsafe fn RightDown(&self) -> Result<i32> {
         const NAME: &'static str = "RightDown";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -764,11 +764,11 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.RightUp().unwrap();
     /// ```
-    pub unsafe fn RightUp(&self) -> Result<i32>{
+    pub unsafe fn RightUp(&self) -> Result<i32> {
         const NAME: &'static str = "RightUp";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        
+
         Ok(result.Anonymous.lVal)
     }
 
@@ -787,12 +787,9 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.MoveTo(0,0).unwrap();
     /// ```
-    pub unsafe fn MoveTo(&self,x: i32, y: i32) -> Result<i32>{
+    pub unsafe fn MoveTo(&self, x: i32, y: i32) -> Result<i32> {
         const NAME: &'static str = "MoveTo";
-        let mut args = [
-            Dmsoft::longVar(y),
-            Dmsoft::longVar(x),
-        ];
+        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -800,9 +797,9 @@ impl Dmsoft {
     }
 
     /// 鼠标相对于上次的位置移动rx,ry.   
-    /// 
+    ///
     /// 如果您要使前台鼠标移动的距离和指定的rx,ry一致,最好配合EnableMouseAccuracy函数来使用.
-    /// 
+    ///
     /// # The function prototype
     /// ```C++
     /// long dmsoft::MoveR(long rx,long ry)
@@ -817,12 +814,9 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.MoveR(0,0).unwrap();
     /// ```
-    pub unsafe fn MoveR(&self,rx: i32, ry: i32) -> Result<i32>{
+    pub unsafe fn MoveR(&self, rx: i32, ry: i32) -> Result<i32> {
         const NAME: &'static str = "MoveR";
-        let mut args = [
-            Dmsoft::longVar(ry),
-            Dmsoft::longVar(rx),
-        ];
+        let mut args = [Dmsoft::longVar(ry), Dmsoft::longVar(rx)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -844,12 +838,9 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.GetColor(0,0).unwrap();
     /// ```
-    pub unsafe fn GetColor(&self, x:i32,y:i32) -> Result<String>{
+    pub unsafe fn GetColor(&self, x: i32, y: i32) -> Result<String> {
         const NAME: &'static str = "GetColor";
-        let mut args = [
-            Dmsoft::longVar(y),
-            Dmsoft::longVar(x),
-        ];
+        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -871,12 +862,9 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.GetColorBGR(0,0).unwrap();
     /// ```
-    pub unsafe fn GetColorBGR(&self, x:i32,y:i32) -> Result<String>{
+    pub unsafe fn GetColorBGR(&self, x: i32, y: i32) -> Result<String> {
         const NAME: &'static str = "GetColorBGR";
-        let mut args = [
-            Dmsoft::longVar(y),
-            Dmsoft::longVar(x),
-        ];
+        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -896,9 +884,32 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.RGB2BGR("00FF00").unwrap();
     /// ```
-    pub unsafe fn RGB2BGR(&self, rgb_color:&str) -> Result<String>{
+    pub unsafe fn RGB2BGR(&self, rgb_color: &str) -> Result<String> {
         const NAME: &'static str = "RGB2BGR";
         let mut args = [Dmsoft::bstrVal(rgb_color)];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
+        Ok(result.try_into().unwrap())
+    }
+
+    /// 把BGR(按键格式)的颜色格式转换为RGB
+    /// # The function prototype
+    /// ```C++
+    /// CString dmsoft::BGR2RGB(const TCHAR * bgr_color)
+    /// ```
+    /// # Args
+    /// * `bgr_color:&str`: bgr格式的颜色字符串
+    /// # Return
+    /// `String` RGB格式的字符串
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.BGR2RGB("00FF00").unwrap();
+    /// ```
+    pub unsafe fn BGR2RGB(&self, bgr_color: &str) -> Result<String> {
+        const NAME: &'static str = "BGR2RGB";
+        let mut args = [Dmsoft::bstrVal(bgr_color)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
