@@ -799,6 +799,36 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 鼠标相对于上次的位置移动rx,ry.   
+    /// 
+    /// 如果您要使前台鼠标移动的距离和指定的rx,ry一致,最好配合EnableMouseAccuracy函数来使用.
+    /// 
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::MoveR(long rx,long ry)
+    /// ```
+    /// # Args
+    /// * `rx:i32`: 相对于上次的X偏移
+    /// * `ry:i32`: 相对于上次的Y偏移
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.MoveR(0,0).unwrap();
+    /// ```
+    pub unsafe fn MoveR(&self,rx: i32, ry: i32) -> Result<i32>{
+        const NAME: &'static str = "MoveR";
+        let mut args = [
+            Dmsoft::longVar(ry),
+            Dmsoft::longVar(rx),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
+
 
 
 
