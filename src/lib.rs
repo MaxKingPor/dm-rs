@@ -196,8 +196,8 @@ impl Dmsoft {
     /// * `string:&str`: 待查找的字符串,可以是字符串组合，比如"长安|洛阳|大雁塔",中间用"|"来分割字符串
     /// * `color_format:&str`: 颜色格式串, 可以包含换行分隔符,语法是","后加分割字符串. 具体可以查看下面的示例 .注意，RGB和HSV,以及灰度格式都支持.
     /// * `sim:f64`: 相似度,取值范围0.1-1.0
-    /// * `x:*mut i32`: 返回X坐标没找到返回-1
-    /// * `y:*mut i32`: 返回Y坐标没找到返回-1
+    /// * `x:&mut i32`: 返回X坐标没找到返回-1
+    /// * `y:&mut i32`: 返回Y坐标没找到返回-1
     /// # Return
     /// * `i32`: 返回字符串的索引 没找到返回-1, 比如"长安|洛阳",若找到长安，则返回0
     /// # Examples
@@ -233,8 +233,8 @@ impl Dmsoft {
         str: &str,
         color: &str,
         sim: f64,
-        x: *mut i32,
-        y: *mut i32,
+        x: &mut i32,
+        y: &mut i32,
     ) -> Result<i32> {
         const NAME: &'static str = "FindStr";
         let mut px = VARIANT::default();
@@ -252,12 +252,9 @@ impl Dmsoft {
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        if !x.is_null() {
-            *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        }
-        if !y.is_null() {
-            *y = py.Anonymous.Anonymous.Anonymous.lVal;
-        }
+        *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        *y = py.Anonymous.Anonymous.Anonymous.lVal;
+
 
         Ok(result.Anonymous.lVal)
     }
@@ -297,8 +294,8 @@ impl Dmsoft {
     /// # Args
     /// `ret:&str`: 部分接口的返回串
     /// `index:i32`: 第几个坐标
-    /// `x:*mut i32`: 返回X坐标
-    /// `y:*mut i32`: 返回Y坐标
+    /// `x:&mut i32`: 返回X坐标
+    /// `y:&mut i32`: 返回Y坐标
     ///
     /// # Return
     /// `i32`: 0: 失败 1: 成功
@@ -318,8 +315,8 @@ impl Dmsoft {
         &self,
         str: &str,
         index: i32,
-        x: *mut i32,
-        y: *mut i32,
+        x: &mut i32,
+        y: &mut i32,
     ) -> Result<i32> {
         const NAME: &'static str = "GetResultPos";
         let mut px = VARIANT::default();
@@ -332,12 +329,10 @@ impl Dmsoft {
         ];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        if !x.is_null() {
-            *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        }
-        if !y.is_null() {
-            *y = py.Anonymous.Anonymous.Anonymous.lVal;
-        }
+
+        *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        *y = py.Anonymous.Anonymous.Anonymous.lVal;
+        
 
         Ok(result.Anonymous.lVal)
     }
@@ -937,6 +932,7 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 比较指定坐标点(x,y)的颜色
     /// # The function prototype
     /// ```C++
     /// long dmsoft::CmpColor(long x,long y,const TCHAR * color,double sim)
@@ -964,6 +960,35 @@ impl Dmsoft {
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
+        Ok(result.Anonymous.lVal)
+    }
+
+    /// 把窗口坐标转换为屏幕坐标 
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::ClientToScreen(long x,long y,const TCHAR * color,double sim)
+    /// ```
+    /// # Args
+    /// * `hwnd:i32`: 指定的窗口句柄
+    /// * `x:&mut i32`: 窗口X坐标
+    /// * `y:&mut i32`: 窗口Y坐标
+
+    /// long dmsoft::ClientToScreen(long hwnd,long * x,long * y)
+    pub unsafe fn ClientToScreen(&self, hwnd:i32, x: &mut i32, y: &mut i32) -> Result<i32>{
+        const NAME: &'static str = "ClientToScreen";
+        let mut px = VARIANT::default();
+        let mut py = VARIANT::default();
+
+        let mut args = [
+            Dmsoft::pvarVal(&mut py),
+            Dmsoft::pvarVal(&mut px),
+            Dmsoft::longVar(hwnd),
+        ];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        *y = py.Anonymous.Anonymous.Anonymous.lVal;
         Ok(result.Anonymous.lVal)
     }
 
