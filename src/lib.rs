@@ -1029,8 +1029,27 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
-    // long dmsoft::ShowScrMsg(long x1,long y1,long x2,long y2,const TCHAR * msg,const TCHAR * color)
-    
+    /// 未在API文档中找到此函数说明
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::ShowScrMsg(long x1,long y1,long x2,long y2,const TCHAR * msg,const TCHAR * color)
+    /// ```
+    pub unsafe fn ShowScrMsg(&self, x1: i32, y1: i32, x2: i32, y2: i32, msg: &str, color: &str) -> Result<i32>{
+        const NAME: &'static str = "ShowScrMsg";
+        let mut args = [
+            Dmsoft::bstrVal(color),
+            Dmsoft::bstrVal(msg),
+            Dmsoft::longVar(y2),
+            Dmsoft::longVar(x2),
+            Dmsoft::longVar(y1),
+            Dmsoft::longVar(x1),
+        ];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+    }
 
 
 
