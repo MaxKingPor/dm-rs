@@ -20,7 +20,7 @@ pub mod keymap;
 
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
 ///
-/// https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
+/// [Windows LOCALE_USER_DEFAULT](https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default)
 pub const LOCALE_USER_DEFAULT: u32 = 0x0400;
 
 /// dm.dmsoft API 绑定
