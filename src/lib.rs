@@ -24,6 +24,7 @@ pub mod keymap;
 pub const LOCALE_USER_DEFAULT: u32 = 0x0400;
 
 /// dm.dmsoft API 绑定
+#[derive(Debug)]
 pub struct Dmsoft {
     /// dm.dmsoft 链接实例
     obj: IDispatch,
@@ -1101,6 +1102,7 @@ impl Dmsoft {
 }
 
 ///
+#[derive(Debug)]
 pub struct KeyMap<'a> {
     key_str: &'a str,
     id: i32,
