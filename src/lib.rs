@@ -973,8 +973,11 @@ impl Dmsoft {
     /// * `hwnd:i32`: 指定的窗口句柄
     /// * `x:&mut i32`: 窗口X坐标
     /// * `y:&mut i32`: 窗口Y坐标
-
-    /// long dmsoft::ClientToScreen(long hwnd,long * x,long * y)
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.ClientToScreen(hwnd,0,0) .unwrap();
+    /// ```
     pub unsafe fn ClientToScreen(&self, hwnd:i32, x: &mut i32, y: &mut i32) -> Result<i32>{
         const NAME: &'static str = "ClientToScreen";
         let mut px = VARIANT::default();
@@ -992,6 +995,43 @@ impl Dmsoft {
         *y = py.Anonymous.Anonymous.Anonymous.lVal;
         Ok(result.Anonymous.lVal)
     }
+
+
+    /// 把屏幕坐标转换为窗口坐标 
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::ScreenToClient(long x,long y,const TCHAR * color,double sim)
+    /// ```
+    /// # Args
+    /// * `hwnd:i32`: 指定的窗口句柄
+    /// * `x:&mut i32`: 窗口X坐标
+    /// * `y:&mut i32`: 窗口Y坐标
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.ScreenToClient(hwnd,0,0) .unwrap();
+    /// ```
+    pub unsafe fn ScreenToClient(&self, hwnd:i32, x: &mut i32, y: &mut i32) -> Result<i32>{
+        const NAME: &'static str = "ScreenToClient";
+        let mut px = VARIANT::default();
+        let mut py = VARIANT::default();
+
+        let mut args = [
+            Dmsoft::pvarVal(&mut py),
+            Dmsoft::pvarVal(&mut px),
+            Dmsoft::longVar(hwnd),
+        ];
+
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        *y = py.Anonymous.Anonymous.Anonymous.lVal;
+        Ok(result.Anonymous.lVal)
+    }
+
+    // long dmsoft::ShowScrMsg(long x1,long y1,long x2,long y2,const TCHAR * msg,const TCHAR * color)
+    
+
 
 
 
