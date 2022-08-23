@@ -973,6 +973,8 @@ impl Dmsoft {
     /// * `hwnd:i32`: 指定的窗口句柄
     /// * `x:&mut i32`: 窗口X坐标
     /// * `y:&mut i32`: 窗口Y坐标
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
@@ -1006,6 +1008,8 @@ impl Dmsoft {
     /// * `hwnd:i32`: 指定的窗口句柄
     /// * `x:&mut i32`: 窗口X坐标
     /// * `y:&mut i32`: 窗口Y坐标
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
     /// # Examples
     /// ```
     /// let dm = Dmsoft::new();
@@ -1051,8 +1055,36 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
+    /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定行间距,默认的行间距是1,
+    /// 
+    /// 如果根据情况设定,可以提高识别精度。一般不用设定。
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::SetMinRowGap(long row_gap)
+    /// ```
+    /// # Args
+    /// * `row_gap:i32`: 最小行间距
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.SetMinRowGap(1) .unwrap();
+    /// ```
+    pub unsafe fn SetMinRowGap(&self, row_gap:i32) -> Result<i32>{
+        const NAME: &'static str = "SetMinRowGap";
+        let mut args = [Dmsoft::longVar(row_gap)];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+
+    }
 
 
+
+
+    
 
 
 
