@@ -1098,6 +1098,8 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.SetMinColGap(1) .unwrap();
     /// ```
+    /// # Note
+    /// * 此设置如果不为0,那么将不能识别连体字 慎用.
     pub unsafe fn SetMinColGap(&self, col_gap:i32) -> Result<i32>{
         const NAME: &'static str = "SetMinColGap";
         let mut args = [Dmsoft::longVar(col_gap)];
