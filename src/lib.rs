@@ -1082,9 +1082,35 @@ impl Dmsoft {
     }
 
 
+    /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定列间距,默认的列间距是0,
+    /// 
+    /// 如果根据情况设定,可以提高识别精度。一般不用设定。
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::SetMinColGap(long col_gap)
+    /// ```
+    /// # Args
+    /// * `col_gap:i32`: 最小列间距
+    /// # Return
+    /// `i32`: 0: 失败 1: 成功
+    /// # Examples
+    /// ```
+    /// let dm = Dmsoft::new();
+    /// let status = dm.SetMinColGap(1) .unwrap();
+    /// ```
+    pub unsafe fn SetMinColGap(&self, col_gap:i32) -> Result<i32>{
+        const NAME: &'static str = "SetMinColGap";
+        let mut args = [Dmsoft::longVar(col_gap)];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+
+        Ok(result.Anonymous.lVal)
+
+    }
 
 
-    
+
+
 
 
 
