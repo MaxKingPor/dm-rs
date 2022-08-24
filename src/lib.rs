@@ -256,7 +256,6 @@ impl Dmsoft {
         *x = px.Anonymous.Anonymous.Anonymous.lVal;
         *y = py.Anonymous.Anonymous.Anonymous.lVal;
 
-
         Ok(result.Anonymous.lVal)
     }
 
@@ -333,7 +332,6 @@ impl Dmsoft {
 
         *x = px.Anonymous.Anonymous.Anonymous.lVal;
         *y = py.Anonymous.Anonymous.Anonymous.lVal;
-        
 
         Ok(result.Anonymous.lVal)
     }
@@ -964,7 +962,7 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
-    /// 把窗口坐标转换为屏幕坐标 
+    /// 把窗口坐标转换为屏幕坐标
     /// # The function prototype
     /// ```C++
     /// long dmsoft::ClientToScreen(long x,long y,const TCHAR * color,double sim)
@@ -977,10 +975,11 @@ impl Dmsoft {
     /// `i32`: 0: 失败 1: 成功
     /// # Examples
     /// ```
+    /// let hwnd = 0;
     /// let dm = Dmsoft::new();
     /// let status = dm.ClientToScreen(hwnd,0,0) .unwrap();
     /// ```
-    pub unsafe fn ClientToScreen(&self, hwnd:i32, x: &mut i32, y: &mut i32) -> Result<i32>{
+    pub unsafe fn ClientToScreen(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
         const NAME: &'static str = "ClientToScreen";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
@@ -998,8 +997,7 @@ impl Dmsoft {
         Ok(result.Anonymous.lVal)
     }
 
-
-    /// 把屏幕坐标转换为窗口坐标 
+    /// 把屏幕坐标转换为窗口坐标
     /// # The function prototype
     /// ```C++
     /// long dmsoft::ScreenToClient(long x,long y,const TCHAR * color,double sim)
@@ -1012,10 +1010,11 @@ impl Dmsoft {
     /// `i32`: 0: 失败 1: 成功
     /// # Examples
     /// ```
+    /// let hwnd = 0;
     /// let dm = Dmsoft::new();
     /// let status = dm.ScreenToClient(hwnd,0,0) .unwrap();
     /// ```
-    pub unsafe fn ScreenToClient(&self, hwnd:i32, x: &mut i32, y: &mut i32) -> Result<i32>{
+    pub unsafe fn ScreenToClient(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
         const NAME: &'static str = "ScreenToClient";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
@@ -1038,7 +1037,15 @@ impl Dmsoft {
     /// ```C++
     /// long dmsoft::ShowScrMsg(long x1,long y1,long x2,long y2,const TCHAR * msg,const TCHAR * color)
     /// ```
-    pub unsafe fn ShowScrMsg(&self, x1: i32, y1: i32, x2: i32, y2: i32, msg: &str, color: &str) -> Result<i32>{
+    pub unsafe fn ShowScrMsg(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        msg: &str,
+        color: &str,
+    ) -> Result<i32> {
         const NAME: &'static str = "ShowScrMsg";
         let mut args = [
             Dmsoft::bstrVal(color),
@@ -1056,7 +1063,7 @@ impl Dmsoft {
     }
 
     /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定行间距,默认的行间距是1,
-    /// 
+    ///
     /// 如果根据情况设定,可以提高识别精度。一般不用设定。
     /// # The function prototype
     /// ```C++
@@ -1071,19 +1078,17 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.SetMinRowGap(1) .unwrap();
     /// ```
-    pub unsafe fn SetMinRowGap(&self, row_gap:i32) -> Result<i32>{
+    pub unsafe fn SetMinRowGap(&self, row_gap: i32) -> Result<i32> {
         const NAME: &'static str = "SetMinRowGap";
         let mut args = [Dmsoft::longVar(row_gap)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
         Ok(result.Anonymous.lVal)
-
     }
 
-
     /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定列间距,默认的列间距是0,
-    /// 
+    ///
     /// 如果根据情况设定,可以提高识别精度。一般不用设定。
     /// # The function prototype
     /// ```C++
@@ -1100,18 +1105,79 @@ impl Dmsoft {
     /// ```
     /// # Note
     /// * 此设置如果不为0,那么将不能识别连体字 慎用.
-    pub unsafe fn SetMinColGap(&self, col_gap:i32) -> Result<i32>{
+    pub unsafe fn SetMinColGap(&self, col_gap: i32) -> Result<i32> {
         const NAME: &'static str = "SetMinColGap";
         let mut args = [Dmsoft::longVar(col_gap)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
         Ok(result.Anonymous.lVal)
-
     }
 
-
-
+    /// 查找指定区域内的颜色,颜色格式"RRGGBB-DRDGDB",注意,和按键的颜色格式相反
+    /// # The function prototype
+    /// ```C++
+    /// long dmsoft::FindColor(long x1,long y1,long x2,long y2,const TCHAR * color,double sim,long dir,long * x,long * y)
+    /// ```
+    /// # Args
+    /// * `x1:i32`: 区域的左上X坐标
+    /// * `y1:i32`: 区域的左上Y坐标
+    /// * `x2:i32`: 区域的右下X坐标
+    /// * `y2:i32`: 区域的右下Y坐标
+    /// * `color:&str`: 颜色 格式为"RRGGBB-DRDGDB",比如"123456-000000|aabbcc-202020". 也可以支持反色模式. 前面加@即可. 比如"@123456-000000|aabbcc-202020". 具体可以看下放注释. 注意，这里只支持RGB颜色.
+    /// * `sim:f64`: 相似度,取值范围0.1-1.0
+    /// * `dir:i32`: 查找方向
+    ///     * 0: 从左到右,从上到下    
+    ///     * 1: 从左到右,从下到上   
+    ///     * 2: 从右到左,从上到下  
+    ///     * 3: 从右到左,从下到上     
+    ///     * 4：从中心往外查找   
+    ///     * 5: 从上到下,从左到右   
+    ///     * 6: 从上到下,从右到左  
+    ///     * 7: 从下到上,从左到右  
+    ///     * 8: 从下到上,从右到左
+    /// * `intX:&mut i32`: 返回X坐标
+    /// * `intY:&mut i32`: 返回Y坐标
+    /// # Examples
+    /// ```
+    /// let (mut x,mut y) = (0,0);
+    /// let dm = Dmsoft::new();
+    /// let status = dm.FindColor(0,0,2000,2000,"123456-000000|aabbcc-030303|ddeeff-202020",1.0,0,&mut x,&mut y).unwrap();
+    /// ```
+    ///
+    pub unsafe fn FindColor(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+        color: &str,
+        sim: f64,
+        dir: i32,
+        x: &mut i32,
+        y: &mut i32,
+    ) -> Result<i32> {
+        const NAME: &'static str = "FindColor";
+        let mut px = VARIANT::default();
+        let mut py = VARIANT::default();
+        let mut args = [
+            Dmsoft::pvarVal(&mut py),
+            Dmsoft::pvarVal(&mut px),
+            Dmsoft::longVar(dir),
+            Dmsoft::doubleVar(sim),
+            Dmsoft::bstrVal(color),
+            Dmsoft::longVar(y2),
+            Dmsoft::longVar(x2),
+            Dmsoft::longVar(y1),
+            Dmsoft::longVar(x1),
+        ];
+        let result = self.Invoke(NAME, &mut args)?;
+        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
+        *x = px.Anonymous.Anonymous.Anonymous.lVal;
+        *y = px.Anonymous.Anonymous.Anonymous.lVal;
+        
+        Ok(result.Anonymous.lVal)
+    }
 
 
 
