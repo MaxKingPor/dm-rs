@@ -6,12 +6,10 @@
 use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex};
 
 use windows::{
-    core::{InParam, HSTRING, PWSTR},
+    core::{InParam, HSTRING, PWSTR, BSTR},
     Win32::{
-        Foundation::BSTR,
         System::{
             Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
-            Ole,
         },
     },
 };
@@ -1195,14 +1193,12 @@ impl Dmsoft {
     pub unsafe fn Invoke(&self, name: &'static str, args: &mut [VARIANT]) -> Result<VARIANT> {
         let mut map = self.catch.lock().unwrap();
         let rgdispid = *map.entry(name).or_insert_with_key(|key| {
-            let mut id = -1;
             let name = HSTRING::from(*key);
             let func_name = PWSTR::from_raw(name.as_ptr() as *mut _);
             // 在调试时解决 expect
             self.obj
-                .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT, &mut id)
-                .expect("调用 GetIDsOfNames 获取ID 异常: ");
-            id
+                .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT)
+                .expect("调用 GetIDsOfNames 获取ID 异常: ")
         });
         drop(map);
         if rgdispid == -1 {
@@ -1220,11 +1216,11 @@ impl Dmsoft {
             rgdispid,
             ptr::null(),
             LOCALE_USER_DEFAULT,
-            Ole::DISPATCH_METHOD as u16,
+            Com::DISPATCH_METHOD,
             &dispparams,
-            &mut result,
-            ptr::null_mut(),
-            ptr::null_mut(),
+            Some(&mut result),
+            None,
+            None,
         ) {
             return Err(Error::WinError(e));
         };
@@ -1235,7 +1231,7 @@ impl Dmsoft {
     pub unsafe fn bstrVal(var: &str) -> VARIANT {
         let s = BSTR::from_raw(HSTRING::from(var).as_ptr());
         let mut arg = VARIANT_0_0::default();
-        arg.vt = Ole::VT_BSTR.0 as u16;
+        arg.vt = Com::VT_BSTR;
         arg.Anonymous.bstrVal = ManuallyDrop::new(s);
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -1247,7 +1243,7 @@ impl Dmsoft {
     /// 从 i32 构建一个 VT_I4 VARIANT
     pub unsafe fn longVar(var: i32) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
-        arg.vt = Ole::VT_I4.0 as u16;
+        arg.vt = Com::VT_I4;
         arg.Anonymous.lVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -1261,7 +1257,7 @@ impl Dmsoft {
     /// VT_BYREF|VT_VARIANT VARIANT
     pub unsafe fn pvarVal(var: *mut VARIANT) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
-        arg.vt = (Ole::VT_BYREF.0 | Ole::VT_VARIANT.0) as u16;
+        arg.vt = Com::VARENUM(Com::VT_BYREF.0 | Com::VT_VARIANT.0);
         arg.Anonymous.pvarVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -1273,7 +1269,7 @@ impl Dmsoft {
     /// 从 f64 构建一个 VT_R8 VARIANT
     pub unsafe fn doubleVar(var: f64) -> VARIANT {
         let mut arg = VARIANT_0_0::default();
-        arg.vt = Ole::VT_R8.0 as u16;
+        arg.vt = Com::VT_R8;
         arg.Anonymous.dblVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {

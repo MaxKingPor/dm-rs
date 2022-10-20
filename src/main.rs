@@ -5,7 +5,7 @@ use windows::Win32::System::Com;
 
 fn main() {
     unsafe {
-        Com::CoInitializeEx(std::ptr::null(), Default::default()).unwrap();
+        Com::CoInitializeEx(None, Default::default()).unwrap();
 
         let dm = Dmsoft::new().unwrap();
 
