@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
+#![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 
 use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex};
 
@@ -84,7 +85,7 @@ impl Dmsoft {
     /// ```
     #[allow(const_item_mutation)]
     pub unsafe fn Ver(&self) -> Result<String> {
-        const NAME: &'static str = "Ver";
+        const NAME: &str = "Ver";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -113,7 +114,7 @@ impl Dmsoft {
     /// // 以上，如果exe在c:\test\a.exe 那么，就相当于把路径设置到了c:\test\MyData
     /// ```
     pub unsafe fn SetPath(&self, path: &str) -> Result<i32> {
-        const NAME: &'static str = "SetPath";
+        const NAME: &str = "SetPath";
 
         let mut args = [Dmsoft::bstrVal(path)];
 
@@ -166,7 +167,7 @@ impl Dmsoft {
         color: &str,
         sim: f64,
     ) -> Result<String> {
-        const NAME: &'static str = "Ocr";
+        const NAME: &str = "Ocr";
 
         let mut args = [
             Dmsoft::doubleVar(sim),
@@ -237,7 +238,7 @@ impl Dmsoft {
         x: &mut i32,
         y: &mut i32,
     ) -> Result<i32> {
-        const NAME: &'static str = "FindStr";
+        const NAME: &str = "FindStr";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
         let mut args = [
@@ -278,7 +279,7 @@ impl Dmsoft {
     /// let count = dm.GetResultCount(s).unwrap();
     /// ```
     pub unsafe fn GetResultCount(&self, str: &str) -> Result<i32> {
-        const NAME: &'static str = "GetResultCount";
+        const NAME: &str = "GetResultCount";
         let mut args = [Dmsoft::bstrVal(str)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -318,7 +319,7 @@ impl Dmsoft {
         x: &mut i32,
         y: &mut i32,
     ) -> Result<i32> {
-        const NAME: &'static str = "GetResultPos";
+        const NAME: &str = "GetResultPos";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
         let mut args = [
@@ -342,7 +343,7 @@ impl Dmsoft {
     /// long dmsoft::StrStr(const TCHAR * s,const TCHAR * str)
     /// ```
     pub unsafe fn StrStr(&self, s: &str, str: &str) -> Result<i32> {
-        const NAME: &'static str = "StrStr";
+        const NAME: &str = "StrStr";
         let mut args = [Dmsoft::bstrVal(str), Dmsoft::bstrVal(s)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -355,7 +356,7 @@ impl Dmsoft {
     /// long dmsoft::SendCommand(const TCHAR * cmd)
     /// ```
     pub unsafe fn SendCommand(&self, cmd: &str) -> Result<i32> {
-        const NAME: &'static str = "SendCommand";
+        const NAME: &str = "SendCommand";
         let mut args = [Dmsoft::bstrVal(cmd)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -385,7 +386,7 @@ impl Dmsoft {
     /// dm_ret = dm.UseDict(0).unwrap();
     /// ```
     pub unsafe fn UseDict(&self, index: i32) -> Result<i32> {
-        const NAME: &'static str = "UseDict";
+        const NAME: &str = "UseDict";
         let mut args = [Dmsoft::longVar(index)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -408,7 +409,7 @@ impl Dmsoft {
     /// let base_path = dm.GetBasePath().unwrap();
     /// ```
     pub unsafe fn GetBasePath(&self) -> Result<String> {
-        const NAME: &'static str = "GetBasePath";
+        const NAME: &str = "GetBasePath";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -432,7 +433,7 @@ impl Dmsoft {
     /// # Note:
     /// * 如果使用了多字库,所有字库的密码必须一样. 此函数必须在SetDict之前调用,否则会解密失败.
     pub unsafe fn SetDictPwd(&self, pwd: &str) -> Result<i32> {
-        const NAME: &'static str = "SetDictPwd";
+        const NAME: &str = "SetDictPwd";
         let mut args = [Dmsoft::bstrVal(pwd)];
         let result = self.Invoke(NAME, &mut args).unwrap();
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -469,7 +470,7 @@ impl Dmsoft {
         color: &str,
         sim: f64,
     ) -> Result<String> {
-        const NAME: &'static str = "OcrInFile";
+        const NAME: &str = "OcrInFile";
 
         let mut args = [
             Dmsoft::doubleVar(sim),
@@ -513,7 +514,7 @@ impl Dmsoft {
         y2: i32,
         file_name: &str,
     ) -> Result<i32> {
-        const NAME: &'static str = "Capture";
+        const NAME: &str = "Capture";
         let mut args = [
             Dmsoft::bstrVal(file_name),
             Dmsoft::longVar(y2),
@@ -540,8 +541,8 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.KeyPress(keymap::KEY_A).unwrap();
     /// ```
-    pub unsafe fn KeyPress<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
-        const NAME: &'static str = "KeyPress";
+    pub unsafe fn KeyPress(&self, vk: KeyMap) -> Result<i32> {
+        const NAME: &str = "KeyPress";
         let mut args = [Dmsoft::longVar(vk.get_id())];
 
         let result = self.Invoke(NAME, &mut args)?;
@@ -564,8 +565,8 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.KeyDown(keymap::KEY_A).unwrap();
     /// ```
-    pub unsafe fn KeyDown<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
-        const NAME: &'static str = "KeyDown";
+    pub unsafe fn KeyDown(&self, vk: KeyMap) -> Result<i32> {
+        const NAME: &str = "KeyDown";
         let mut args = [Dmsoft::longVar(vk.get_id())];
 
         let result = self.Invoke(NAME, &mut args)?;
@@ -588,8 +589,8 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// let status = dm.KeyUp(keymap::KEY_A).unwrap();
     /// ```
-    pub unsafe fn KeyUp<'a>(&self, vk: KeyMap<'a>) -> Result<i32> {
-        const NAME: &'static str = "KeyUp";
+    pub unsafe fn KeyUp(&self, vk: KeyMap) -> Result<i32> {
+        const NAME: &str = "KeyUp";
         let mut args = [Dmsoft::longVar(vk.get_id())];
 
         let result = self.Invoke(NAME, &mut args)?;
@@ -612,7 +613,7 @@ impl Dmsoft {
     /// let status = dm.LeftClick().unwrap();
     /// ```
     pub unsafe fn LeftClick(&self) -> Result<i32> {
-        const NAME: &'static str = "LeftClick";
+        const NAME: &str = "LeftClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -633,7 +634,7 @@ impl Dmsoft {
     /// let status = dm.RightClick().unwrap();
     /// ```
     pub unsafe fn RightClick(&self) -> Result<i32> {
-        const NAME: &'static str = "RightClick";
+        const NAME: &str = "RightClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -654,7 +655,7 @@ impl Dmsoft {
     /// let status = dm.MiddleClick().unwrap();
     /// ```
     pub unsafe fn MiddleClick(&self) -> Result<i32> {
-        const NAME: &'static str = "MiddleClick";
+        const NAME: &str = "MiddleClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -675,7 +676,7 @@ impl Dmsoft {
     /// let status = dm.LeftDoubleClick().unwrap();
     /// ```
     pub unsafe fn LeftDoubleClick(&self) -> Result<i32> {
-        const NAME: &'static str = "LeftDoubleClick";
+        const NAME: &str = "LeftDoubleClick";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -696,7 +697,7 @@ impl Dmsoft {
     /// let status = dm.LeftDown().unwrap();
     /// ```
     pub unsafe fn LeftDown(&self) -> Result<i32> {
-        const NAME: &'static str = "LeftDown";
+        const NAME: &str = "LeftDown";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -717,7 +718,7 @@ impl Dmsoft {
     /// let status = dm.LeftUp().unwrap();
     /// ```
     pub unsafe fn LeftUp(&self) -> Result<i32> {
-        const NAME: &'static str = "LeftUp";
+        const NAME: &str = "LeftUp";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -738,7 +739,7 @@ impl Dmsoft {
     /// let status = dm.RightDown().unwrap();
     /// ```
     pub unsafe fn RightDown(&self) -> Result<i32> {
-        const NAME: &'static str = "RightDown";
+        const NAME: &str = "RightDown";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -759,7 +760,7 @@ impl Dmsoft {
     /// let status = dm.RightUp().unwrap();
     /// ```
     pub unsafe fn RightUp(&self) -> Result<i32> {
-        const NAME: &'static str = "RightUp";
+        const NAME: &str = "RightUp";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -782,7 +783,7 @@ impl Dmsoft {
     /// let status = dm.MoveTo(0,0).unwrap();
     /// ```
     pub unsafe fn MoveTo(&self, x: i32, y: i32) -> Result<i32> {
-        const NAME: &'static str = "MoveTo";
+        const NAME: &str = "MoveTo";
         let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -809,7 +810,7 @@ impl Dmsoft {
     /// let status = dm.MoveR(0,0).unwrap();
     /// ```
     pub unsafe fn MoveR(&self, rx: i32, ry: i32) -> Result<i32> {
-        const NAME: &'static str = "MoveR";
+        const NAME: &str = "MoveR";
         let mut args = [Dmsoft::longVar(ry), Dmsoft::longVar(rx)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -833,7 +834,7 @@ impl Dmsoft {
     /// let status = dm.GetColor(0,0).unwrap();
     /// ```
     pub unsafe fn GetColor(&self, x: i32, y: i32) -> Result<String> {
-        const NAME: &'static str = "GetColor";
+        const NAME: &str = "GetColor";
         let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -857,7 +858,7 @@ impl Dmsoft {
     /// let status = dm.GetColorBGR(0,0).unwrap();
     /// ```
     pub unsafe fn GetColorBGR(&self, x: i32, y: i32) -> Result<String> {
-        const NAME: &'static str = "GetColorBGR";
+        const NAME: &str = "GetColorBGR";
         let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -879,7 +880,7 @@ impl Dmsoft {
     /// let status = dm.RGB2BGR("00FF00").unwrap();
     /// ```
     pub unsafe fn RGB2BGR(&self, rgb_color: &str) -> Result<String> {
-        const NAME: &'static str = "RGB2BGR";
+        const NAME: &str = "RGB2BGR";
         let mut args = [Dmsoft::bstrVal(rgb_color)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -902,7 +903,7 @@ impl Dmsoft {
     /// let status = dm.BGR2RGB("00FF00").unwrap();
     /// ```
     pub unsafe fn BGR2RGB(&self, bgr_color: &str) -> Result<String> {
-        const NAME: &'static str = "BGR2RGB";
+        const NAME: &str = "BGR2RGB";
         let mut args = [Dmsoft::bstrVal(bgr_color)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -924,7 +925,7 @@ impl Dmsoft {
     /// let status = dm.UnBindWindow().unwrap();
     /// ```
     pub unsafe fn UnBindWindow(&self) -> Result<i32> {
-        const NAME: &'static str = "UnBindWindow";
+        const NAME: &str = "UnBindWindow";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
 
@@ -949,7 +950,7 @@ impl Dmsoft {
     /// let status = dm.CmpColor(200,300,"000000-000000|ff00ff-101010",0.9).unwrap();
     /// ```
     pub unsafe fn CmpColor(&self, x: i32, y: i32, color: &str, sim: f64) -> Result<i32> {
-        const NAME: &'static str = "UnBindWindow";
+        const NAME: &str = "UnBindWindow";
         let mut args = [
             Dmsoft::doubleVar(sim),
             Dmsoft::bstrVal(color),
@@ -980,7 +981,7 @@ impl Dmsoft {
     /// let status = dm.ClientToScreen(hwnd,0,0) .unwrap();
     /// ```
     pub unsafe fn ClientToScreen(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
-        const NAME: &'static str = "ClientToScreen";
+        const NAME: &str = "ClientToScreen";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
 
@@ -1015,7 +1016,7 @@ impl Dmsoft {
     /// let status = dm.ScreenToClient(hwnd,0,0) .unwrap();
     /// ```
     pub unsafe fn ScreenToClient(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
-        const NAME: &'static str = "ScreenToClient";
+        const NAME: &str = "ScreenToClient";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
 
@@ -1046,7 +1047,7 @@ impl Dmsoft {
         msg: &str,
         color: &str,
     ) -> Result<i32> {
-        const NAME: &'static str = "ShowScrMsg";
+        const NAME: &str = "ShowScrMsg";
         let mut args = [
             Dmsoft::bstrVal(color),
             Dmsoft::bstrVal(msg),
@@ -1079,7 +1080,7 @@ impl Dmsoft {
     /// let status = dm.SetMinRowGap(1) .unwrap();
     /// ```
     pub unsafe fn SetMinRowGap(&self, row_gap: i32) -> Result<i32> {
-        const NAME: &'static str = "SetMinRowGap";
+        const NAME: &str = "SetMinRowGap";
         let mut args = [Dmsoft::longVar(row_gap)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -1106,7 +1107,7 @@ impl Dmsoft {
     /// # Note
     /// * 此设置如果不为0,那么将不能识别连体字 慎用.
     pub unsafe fn SetMinColGap(&self, col_gap: i32) -> Result<i32> {
-        const NAME: &'static str = "SetMinColGap";
+        const NAME: &str = "SetMinColGap";
         let mut args = [Dmsoft::longVar(col_gap)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
@@ -1138,6 +1139,8 @@ impl Dmsoft {
     ///     * 8: 从下到上,从右到左
     /// * `intX:&mut i32`: 返回X坐标
     /// * `intY:&mut i32`: 返回Y坐标
+    /// # Return
+    /// `i32`: 0: 没找到 1: 找到
     /// # Examples
     /// ```
     /// let (mut x,mut y) = (0,0);
@@ -1157,7 +1160,7 @@ impl Dmsoft {
         x: &mut i32,
         y: &mut i32,
     ) -> Result<i32> {
-        const NAME: &'static str = "FindColor";
+        const NAME: &str = "FindColor";
         let mut px = VARIANT::default();
         let mut py = VARIANT::default();
         let mut args = [
@@ -1175,21 +1178,15 @@ impl Dmsoft {
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         *x = px.Anonymous.Anonymous.Anonymous.lVal;
         *y = px.Anonymous.Anonymous.Anonymous.lVal;
-        
+
         Ok(result.Anonymous.lVal)
     }
-
-
-
-
-
-
 
     // TODO: 其他函数映射
 }
 
 /// 辅助函数
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::field_reassign_with_default)]
 impl Dmsoft {
     /// 通过COM Function 名称 快捷调用
     /// # Args

@@ -7,8 +7,7 @@ use super::KeyMap;
 
 macro_rules! key {
     ($ident:ident, $key_str:expr, $id:expr) => {
-        /// 按键:
-        #[doc=$key_str]
+        #[doc= concat!( "按键:", stringify!($key_str)) ]
         pub const $ident: KeyMap<'static> = KeyMap {
             key_str: $key_str,
             id: $id,
