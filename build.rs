@@ -7,6 +7,6 @@ fn main(){
     println!("OUT_DIR : {:?}", fs::canonicalize(&path));
 
     fs::copy("dm.dll", path.join("dm.dll")).unwrap();
-    fs::copy("DmReg_b.dll", path.join("DmReg.dll")).unwrap();
+    fs::copy("DmReg.dll", path.join("DmReg.dll")).unwrap();
 
 }
