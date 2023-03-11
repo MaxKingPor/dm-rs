@@ -1,10 +1,19 @@
 use dm::Dmsoft;
-use windows::Win32::System::Com;
 
+use windows::Win32::System::Com;
 #[allow(unused_labels)]
 
 fn main() {
     unsafe {
+        let s = "D:\\Download\\大漠最新版-密码1234\\7.2302\\dm.dll";
+        let a: Vec<_> = s.encode_utf16().chain(Some(0)).collect();
+        let r = dm::SetDllPathW(a.as_ptr() as _, 0);
+        println!("SetDllPathW result {r}");
+        // println!("{r:?}");
+        // let r = windows::core::h!("RegDll.dll");
+        // let r = dm::SetDllPathW(windows::core::PCWSTR(r.as_ptr()), 0);
+        // return;
+
         Com::CoInitializeEx(None, Default::default()).unwrap();
 
         let dm = Dmsoft::new().unwrap();

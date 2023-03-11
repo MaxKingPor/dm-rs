@@ -1,0 +1,5 @@
+LIBRARY	DmReg
+
+EXPORTS
+SetDllPathA @1
+SetDllPathW @2

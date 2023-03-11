@@ -3,16 +3,19 @@
 #![doc = include_str!("../README.md")]
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 
-use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex};
+use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex, ffi::c_char};
 
 use windows::{
-    core::{InParam, HSTRING, PWSTR, BSTR},
-    Win32::{
-        System::{
-            Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
-        },
-    },
+    core::{BSTR, HSTRING, PCWSTR},
+    Win32::System::Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
 };
+
+
+#[link(name="DmReg")]
+extern "C" {
+    pub fn SetDllPathA(path:*const c_char, status:usize)->usize;
+    pub fn SetDllPathW(path:*const c_char, status:usize)->usize;
+}
 
 #[cfg(feature = "keymap")]
 pub mod keymap;
@@ -52,12 +55,9 @@ impl Dmsoft {
     /// let dm = Dmsoft::new();
     /// ```
     pub unsafe fn new() -> windows::core::Result<Self> {
+        Com::CoInitializeEx(None, Default::default()).unwrap();
         let guid = Com::CLSIDFromProgID(windows::w!("dm.dmsoft"))?;
-        let r = Com::CoCreateInstance::<'_, InParam<'_, _>, IDispatch>(
-            &guid,
-            InParam::null(),
-            Com::CLSCTX_ALL,
-        )?;
+        let r = Com::CoCreateInstance(&guid, None, Com::CLSCTX_ALL)?;
         Ok(Self {
             obj: r,
             catch: Mutex::new(HashMap::new()),
@@ -1194,11 +1194,13 @@ impl Dmsoft {
         let mut map = self.catch.lock().unwrap();
         let rgdispid = *map.entry(name).or_insert_with_key(|key| {
             let name = HSTRING::from(*key);
-            let func_name = PWSTR::from_raw(name.as_ptr() as *mut _);
+            let func_name = PCWSTR::from_raw(name.as_ptr() as *mut _);
             // 在调试时解决 expect
+            let mut result = 0;
             self.obj
-                .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT)
-                .expect("调用 GetIDsOfNames 获取ID 异常: ")
+                .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT, &mut result)
+                .expect("调用 GetIDsOfNames 获取ID 异常: ");
+            result
         });
         drop(map);
         if rgdispid == -1 {

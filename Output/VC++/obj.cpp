@@ -10441,3 +10441,26 @@ long dmsoft::SetInputDm(long input_dm,long rx,long ry)
     return 0;
 }
 
+long dmsoft::SetFindPicMultithreadLimit(long limit)
+{
+    static DISPID dispatch_id = -1;
+    MyDispatchDriver spDisp(obj);
+    HRESULT hr;
+    COleVariant pn[1];
+    CComVariant vResult;
+
+    pn[0] = COleVariant(limit);
+
+    if (dispatch_id == -1)
+    {
+        spDisp.GetIDOfName(L"SetFindPicMultithreadLimit",&dispatch_id);
+    }
+
+    hr = spDisp.InvokeN(dispatch_id,pn,1,&vResult);
+    if (SUCCEEDED(hr))
+    {
+        return vResult.lVal;
+    }
+    return 0;
+}
+

@@ -431,6 +431,7 @@ public:
     virtual CString FindPicSimE(long x1,long y1,long x2,long y2,const TCHAR * pic_name,const TCHAR * delta_color,long sim,long dir);
     virtual CString FindPicSimMemE(long x1,long y1,long x2,long y2,const TCHAR * pic_info,const TCHAR * delta_color,long sim,long dir);
     virtual long SetInputDm(long input_dm,long rx,long ry);
+    virtual long SetFindPicMultithreadLimit(long limit);
 };
 
 #endif
