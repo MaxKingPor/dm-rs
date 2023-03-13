@@ -5,7 +5,7 @@ use windows::Win32::System::Com;
 
 fn main() {
     unsafe {
-        let s = "D:\\Download\\大漠最新版-密码1234\\7.2302\\dm.dll";
+        let s = "dm.dll";
         let a: Vec<_> = s.encode_utf16().chain(Some(0)).collect();
         let r = dm::SetDllPathW(a.as_ptr() as _, 0);
         println!("SetDllPathW result {r}");
