@@ -3,18 +3,61 @@
 #![doc = include_str!("../README.md")]
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 
-use std::{collections::HashMap, mem::ManuallyDrop, ptr, sync::Mutex, ffi::c_char};
+use std::{
+    collections::HashMap, ffi::c_char, mem::ManuallyDrop, os::windows::prelude::OsStrExt,
+    path::Path, ptr, sync::Mutex,
+};
 
+use once_cell::sync::OnceCell;
 use windows::{
     core::{BSTR, HSTRING, PCWSTR},
     Win32::System::Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
 };
 
+// #[allow(missing_docs)]
+// #[link(name = "DmReg")]
+// extern "C" {
+//     #[link_name = "SetDllPathA"]
+//     pub fn SetDllPathA(path: *const c_char, status: usize) -> usize;
+//     #[link_name = "SetDllPathW"]
+//     pub fn SetDllPathW(path: *const c_char, status: usize) -> usize;
+// }
 
-#[link(name="DmReg")]
-extern "C" {
-    pub fn SetDllPathA(path:*const c_char, status:usize)->usize;
-    pub fn SetDllPathW(path:*const c_char, status:usize)->usize;
+static REG_DLL: OnceCell<libloading::Library> = OnceCell::new();
+
+#[allow(missing_docs, non_snake_case)]
+pub unsafe fn SetDllPathW(path: *const c_char, status: usize) -> usize {
+    let lib = REG_DLL.get_or_init(|| libloading::Library::new("DmReg.dll").unwrap());
+    let set_dll_path_w = lib
+        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathW")
+        .unwrap();
+    set_dll_path_w(path, status)
+}
+
+#[allow(missing_docs, non_snake_case)]
+pub unsafe fn SetDllPathA(path: *const c_char, status: usize) -> usize {
+    let lib = REG_DLL.get_or_init(|| libloading::Library::new("DmReg.dll").unwrap());
+    let set_dll_path_a = lib
+        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathA")
+        .unwrap();
+    set_dll_path_a(path, status)
+}
+
+#[allow(missing_docs)]
+pub unsafe fn set_dll_path(dm_path: impl AsRef<Path>, dm_reg_path: impl AsRef<Path>) {
+    let lib = REG_DLL.get_or_init(|| libloading::Library::new(dm_reg_path.as_ref()).unwrap());
+    let set_dll_path_w = lib
+        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathW")
+        .unwrap();
+    let path = dm_path.as_ref().canonicalize().unwrap();
+    let v: Vec<_> = path
+        .as_os_str()
+        .encode_wide()
+        .skip(4)
+        .chain(Some(0))
+        .collect();
+    let r = set_dll_path_w(v.as_ptr() as _, 0);
+    println!("SetDllPathW result {r}");
 }
 
 #[cfg(feature = "keymap")]

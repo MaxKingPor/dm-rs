@@ -1,3 +1,5 @@
+use std::{os::windows::prelude::OsStrExt, path::Path};
+
 use dm::Dmsoft;
 
 use windows::Win32::System::Com;
@@ -5,14 +7,11 @@ use windows::Win32::System::Com;
 
 fn main() {
     unsafe {
-        let s = "dm.dll";
-        let a: Vec<_> = s.encode_utf16().chain(Some(0)).collect();
-        let r = dm::SetDllPathW(a.as_ptr() as _, 0);
-        println!("SetDllPathW result {r}");
-        // println!("{r:?}");
-        // let r = windows::core::h!("RegDll.dll");
-        // let r = dm::SetDllPathW(windows::core::PCWSTR(r.as_ptr()), 0);
-        // return;
+
+        let s = r#"D:\Project\Rust-Project\win32com\dm.dll"#;
+
+        dm::set_dll_path(s, "DmReg.dll");
+        println!("#######################");
 
         Com::CoInitializeEx(None, Default::default()).unwrap();
 
