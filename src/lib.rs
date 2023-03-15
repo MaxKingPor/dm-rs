@@ -11,17 +11,467 @@ use std::{
 use once_cell::sync::OnceCell;
 use windows::{
     core::{BSTR, HSTRING, PCWSTR},
-    Win32::System::Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
+    Win32::System::Com::{
+        self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0, VARIANT_0_0_0, VT_EMPTY,
+    },
 };
+// #[derive(Debug)]
+enum VTVar {
+    U8(u8),
+    I8(i8),
+    PU8(*mut u8),
+    PI8(*mut i8),
+    U16(u16),
+    I16(i16),
+    PU16(*mut u16),
+    PI16(*mut i16),
+    U32(u32),
+    I32(i32),
+    PU32(*mut u32),
+    PI32(*mut i32),
+    U64(u64),
+    I64(i64),
+    PU64(*mut u64),
+    PI64(*mut i64),
+    F32(f32),
+    PF32(*mut f32),
+    F64(f64),
+    PF64(*mut f64),
+    CY(CY),
+    Pcy(*mut CY),
+    String(String),
+    Empty,
+}
+#[derive(Clone, Copy)]
+#[repr(C)]
+union CY {
+    anonymous: Cy0,
+    int64: i64,
+}
 
-// #[allow(missing_docs)]
-// #[link(name = "DmReg")]
-// extern "C" {
-//     #[link_name = "SetDllPathA"]
-//     pub fn SetDllPathA(path: *const c_char, status: usize) -> usize;
-//     #[link_name = "SetDllPathW"]
-//     pub fn SetDllPathW(path: *const c_char, status: usize) -> usize;
-// }
+#[repr(C)]
+#[derive(Clone, Copy)]
+
+struct Cy0 {
+    lo: u32,
+    hi: i32,
+}
+
+trait CastToVTVar {
+    fn to_vtvar(self) -> VTVar;
+}
+#[allow(unused)]
+impl CastToVTVar for VARIANT {
+    fn to_vtvar(self) -> VTVar {
+        unsafe {
+            let anonymous = ManuallyDrop::into_inner(self.Anonymous.Anonymous);
+            match anonymous {
+                VARIANT_0_0 {
+                    vt: Com::VT_EMPTY,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::Empty,
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_EMPTY.0 | Com::VT_BYREF.0 => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VT_UI1,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::U8(Anonymous.bVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UI1.0 | Com::VT_BYREF.0 => VTVar::PU8(Anonymous.pbVal),
+                VARIANT_0_0 {
+                    vt: Com::VT_UI2,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::U16(Anonymous.uiVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UI2.0 | Com::VT_BYREF.0 => VTVar::PU16(Anonymous.puiVal),
+                VARIANT_0_0 {
+                    vt: Com::VT_UI4,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::U32(Anonymous.ulVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UI4.0 | Com::VT_BYREF.0 => VTVar::PU32(Anonymous.pulVal),
+                VARIANT_0_0 {
+                    vt: Com::VT_UI8,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::U64(Anonymous.ullVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UI8.0 | Com::VT_BYREF.0 => VTVar::PU64(Anonymous.pullVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_UINT,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::U32(Anonymous.uintVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UINT.0 | Com::VT_BYREF.0 => VTVar::PU32(Anonymous.puintVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_INT,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::I32(Anonymous.intVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_INT.0 | Com::VT_BYREF.0 => VTVar::PI32(Anonymous.pintVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_I1,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::I8(Anonymous.cVal as _),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_I1.0 | Com::VT_BYREF.0 => VTVar::PI8(Anonymous.pcVal.0 as _),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_I2,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::I16(Anonymous.iVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_I2.0 | Com::VT_BYREF.0 => VTVar::PI16(Anonymous.piVal),
+                VARIANT_0_0 {
+                    vt: Com::VT_I4,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::I32(Anonymous.lVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_I4.0 | Com::VT_BYREF.0 => VTVar::PI32(Anonymous.plVal),
+                VARIANT_0_0 {
+                    vt: Com::VT_I8,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::I64(Anonymous.llVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_I8.0 | Com::VT_BYREF.0 => VTVar::PI64(Anonymous.pllVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_R4,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::F32(Anonymous.fltVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_R4.0 | Com::VT_BYREF.0 => VTVar::PF32(Anonymous.pfltVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_R8,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::F64(Anonymous.dblVal),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_R8.0 | Com::VT_BYREF.0 => VTVar::PF64(Anonymous.pdblVal),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_CY,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => VTVar::CY(*(&Anonymous.cyVal as *const _ as *const CY)),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_CY.0 | Com::VT_BYREF.0 => VTVar::Pcy(Anonymous.pcyVal as _),
+
+                VARIANT_0_0 {
+                    vt: Com::VT_BSTR,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => {
+                    let str = ManuallyDrop::into_inner(Anonymous.bstrVal);
+                    VTVar::String(str.try_into().unwrap())
+                }
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_BSTR.0 | Com::VT_BYREF.0 => {
+                    #[allow(clippy::drop_ref)]
+                    {
+                        let str = Anonymous.pbstrVal.as_mut().unwrap();
+                        let a = String::try_from(str as &BSTR);
+                        drop(str);
+                        VTVar::String(a.unwrap())
+                    }
+                }
+                VARIANT_0_0 {
+                    vt: Com::VT_DECIMAL,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_DECIMAL.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_NULL,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_NULL.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_ERROR,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_ERROR.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_BOOL,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_BOOL.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_DATE,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_DATE.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+                VARIANT_0_0 {
+                    vt: Com::VT_DISPATCH,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_DISPATCH.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_VARIANT,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => panic!("非法。VT_VARIANT必须通过引用传递。"),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_DISPATCH.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VT_UNKNOWN,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => todo!(),
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if b == Com::VT_UNKNOWN.0 | Com::VT_BYREF.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt: Com::VARENUM(b),
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } if (b & Com::VT_ARRAY.0) == Com::VT_ARRAY.0 => {
+                    todo!()
+                }
+
+                VARIANT_0_0 {
+                    vt,
+                    wReserved1,
+                    wReserved2,
+                    wReserved3,
+                    Anonymous,
+                } => {
+                    todo!()
+                }
+            }
+        }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_name() {
+        let mut arg = VARIANT_0_0::default();
+        arg.vt = Com::VARENUM(Com::VT_EMPTY.0);
+
+        let var = VARIANT {
+            Anonymous: VARIANT_0 {
+                Anonymous: ManuallyDrop::new(arg),
+            },
+        };
+
+        let r = var.to_vtvar();
+        // println!("{r:?}")
+    }
+}
 
 static REG_DLL: OnceCell<libloading::Library> = OnceCell::new();
 
@@ -64,7 +514,6 @@ pub unsafe fn set_dll_path(dm_path: impl AsRef<Path>, dm_reg_path: impl AsRef<Pa
 pub mod keymap;
 
 /// 在windows-rs 中并未搜索到此参数 使用本地定义 来源:
-///
 /// [Windows LOCALE_USER_DEFAULT](https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default)
 pub const LOCALE_USER_DEFAULT: u32 = 0x0400;
 
@@ -126,7 +575,7 @@ impl Dmsoft {
     /// ```
     #[allow(const_item_mutation)]
     pub unsafe fn Ver(&self) -> Result<String> {
-        const NAME: &str = "Ver";
+        static NAME: &str = "Ver";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
@@ -155,7 +604,7 @@ impl Dmsoft {
     /// // 以上，如果exe在c:\test\a.exe 那么，就相当于把路径设置到了c:\test\MyData
     /// ```
     pub unsafe fn SetPath(&self, path: &str) -> Result<i32> {
-        const NAME: &str = "SetPath";
+        static NAME: &str = "SetPath";
 
         let mut args = [Dmsoft::bstrVal(path)];
 
@@ -163,275 +612,6 @@ impl Dmsoft {
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let a = result.Anonymous.lVal;
         Ok(a)
-    }
-
-    /// 识别屏幕范围(x1,y1,x2,y2)内符合color_format的字符串,并且相似度为sim,sim取值范围(0.1-1.0),
-    ///
-    /// 这个值越大越精确,越大速度越快,越小速度越慢,请斟酌使用!
-    ///
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::Ocr(long x1,long y1,long x2,long y2,const TCHAR * color,double sim)
-    /// ```
-    /// # Args
-    /// * `x1:i32`: 区域的左上X坐标
-    /// * `y1:i32`: 区域的左上Y坐标
-    /// * `x2:i32`: 区域的右下X坐标
-    /// * `y2:i32`: 区域的右下Y坐标
-    /// * `color_format:&str`: 颜色格式串. 可以包含换行分隔符,语法是","后加分割字符串. 具体可以查看下面的示例.注意，RGB和HSV,以及灰度格式都支持.
-    /// * `sim:f64`:相似度,取值范围0.1-1.0
-    ///
-    /// ## Return
-    /// * `String` 返回识别到的字符串
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// // RGB单色识别
-    /// let s = dm.Ocr(0,0,2000,2000,"9f2e3f-000000",1.0).unwrap();
-    /// // RGB单色差色识别
-    /// let s = dm.Ocr(0,0,2000,2000,"9f2e3f-030303",1.0).unwrap();
-    /// // RGB多色识别(最多支持10种,每种颜色用"|"分割)
-    /// let s = dm.Ocr(0,0,2000,2000,"9f2e3f-030303|2d3f2f-000000|3f9e4d-100000",1.0).unwrap();
-    /// //HSV多色识别(最多支持10种,每种颜色用"|"分割)
-    /// let s = dm.Ocr(0,0,2000,2000,"20.30.40-0.0.0|30.40.50-0.0.0",1.0).unwrap();
-    /// //灰度多色识别(最多支持10种,每种颜色用"|"分割)
-    /// let s = dm.Ocr(0,0,2000,2000,"#40-0|#70-10",1.0).unwrap();
-    /// //识别后,每行字符串用指定字符分割 比如用"|"字符分割
-    /// let s = dm.Ocr(0,0,2000,2000,"9f2e3f-000000,|",1.0).unwrap();
-    /// ```
-    pub unsafe fn Ocr(
-        &self,
-        x1: i32,
-        y1: i32,
-        x2: i32,
-        y2: i32,
-        color: &str,
-        sim: f64,
-    ) -> Result<String> {
-        const NAME: &str = "Ocr";
-
-        let mut args = [
-            Dmsoft::doubleVar(sim),
-            Dmsoft::bstrVal(color),
-            Dmsoft::longVar(y2),
-            Dmsoft::longVar(x2),
-            Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1),
-        ];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-
-    /// 在屏幕范围(x1,y1,x2,y2)内,查找string(可以是任意个字符串的组合),并返回符合color_format的坐标位置,相似度sim同Ocr接口描述.
-    ///
-    /// (多色,差色查找类似于Ocr接口,不再重述)
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::FindStr(long x1,long y1,long x2,long y2,const TCHAR * str,const TCHAR * color,double sim,long * x,long * y)
-    /// ```
-    /// # Args
-    /// * `x1:i32`: 区域的左上X坐标
-    /// * `y1:i32`: 区域的左上Y坐标
-    /// * `x2:i32`: 区域的右下X坐标
-    /// * `y2:i32`: 区域的右下Y坐标
-    /// * `string:&str`: 待查找的字符串,可以是字符串组合，比如"长安|洛阳|大雁塔",中间用"|"来分割字符串
-    /// * `color_format:&str`: 颜色格式串, 可以包含换行分隔符,语法是","后加分割字符串. 具体可以查看下面的示例 .注意，RGB和HSV,以及灰度格式都支持.
-    /// * `sim:f64`: 相似度,取值范围0.1-1.0
-    /// * `x:&mut i32`: 返回X坐标没找到返回-1
-    /// * `y:&mut i32`: 返回Y坐标没找到返回-1
-    /// # Return
-    /// * `i32`: 返回字符串的索引 没找到返回-1, 比如"长安|洛阳",若找到长安，则返回0
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let (mut x,mut y) = (0,0);
-    ///
-    /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安","9f2e3f-000000",1.0,&mut x,&mut y).unwrap();
-    /// if x >= 0 and y >= 0{
-    ///     dm.MoveTo(x, y);
-    /// };
-    ///
-    /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安|洛阳","9f2e3f-000000",1.0,&mut x,&mut y).unwrap();
-    /// if x >= 0 and y >= 0{
-    ///     dm.MoveTo(x, y);
-    /// };
-    ///
-    /// // 查找时,对多行文本进行换行,换行分隔符是"|". 语法是在","后增加换行字符串.任意字符串都可以.
-    /// let dm_ret = dm.FindStr(0,0,2000,2000,"长安|洛阳","9f2e3f-000000,|",1.0,&mut x,&mut y).unwrap();
-    /// if x >= 0 and y >= 0{
-    ///     dm.MoveTo(x, y);
-    /// };
-    /// ```
-    /// # Note:
-    /// * 此函数的原理是先Ocr识别，然后再查找。所以速度比FindStrFast要慢，尤其是在字库 很大，或者模糊度不为1.0时。\
-    /// * 一般字库字符数量小于100左右，模糊度为1.0时，用FindStr要快一些,否则用FindStrFast.
-    pub unsafe fn FindStr(
-        &self,
-        x1: i32,
-        y1: i32,
-        x2: i32,
-        y2: i32,
-        str: &str,
-        color: &str,
-        sim: f64,
-        x: &mut i32,
-        y: &mut i32,
-    ) -> Result<i32> {
-        const NAME: &str = "FindStr";
-        let mut px = VARIANT::default();
-        let mut py = VARIANT::default();
-        let mut args = [
-            Dmsoft::pvarVal(&mut py),
-            Dmsoft::pvarVal(&mut px),
-            Dmsoft::doubleVar(sim),
-            Dmsoft::bstrVal(color),
-            Dmsoft::bstrVal(str),
-            Dmsoft::longVar(y2),
-            Dmsoft::longVar(x2),
-            Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1),
-        ];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        *y = py.Anonymous.Anonymous.Anonymous.lVal;
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 对插件部分接口的返回值进行解析,并返回ret中的坐标个数
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::GetResultCount(const TCHAR * str)
-    /// ```
-    ///
-    /// # Args
-    /// * `str:&str` 部分接口的返回串
-    /// # Return
-    /// `i32` 返回ret中的坐标个数
-    ///
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    ///
-    /// let s = dm.FindColorEx(0,0,2000,2000,"123456-000000|abcdef-202020",1.0,0).unwrap();
-    /// let count = dm.GetResultCount(s).unwrap();
-    /// ```
-    pub unsafe fn GetResultCount(&self, str: &str) -> Result<i32> {
-        const NAME: &str = "GetResultCount";
-        let mut args = [Dmsoft::bstrVal(str)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let a = result.Anonymous.lVal;
-        Ok(a)
-    }
-
-    /// 对插件部分接口的返回值进行解析,并根据指定的第index个坐标,返回具体的值
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::GetResultPos(const TCHAR * str,long index,long * x,long * y)
-    /// ```
-    /// # Args
-    /// `ret:&str`: 部分接口的返回串
-    /// `index:i32`: 第几个坐标
-    /// `x:&mut i32`: 返回X坐标
-    /// `y:&mut i32`: 返回Y坐标
-    ///
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    ///
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let (mut x,mut y) = (0,0);
-    ///
-    /// let s = dm.FindColorEx(0,0,2000,2000,"123456-000000|abcdef-202020",1.0,0).unwrap();
-    /// let count = dm.GetResultCount(s)
-    /// for i in 0..count{
-    ///     let dm_ret = dm.GetResultPos(s,i,&mut x,&mut y).unwrap();
-    /// }
-    /// ```
-    pub unsafe fn GetResultPos(
-        &self,
-        str: &str,
-        index: i32,
-        x: &mut i32,
-        y: &mut i32,
-    ) -> Result<i32> {
-        const NAME: &str = "GetResultPos";
-        let mut px = VARIANT::default();
-        let mut py = VARIANT::default();
-        let mut args = [
-            Dmsoft::pvarVal(&mut py),
-            Dmsoft::pvarVal(&mut px),
-            Dmsoft::longVar(index),
-            Dmsoft::bstrVal(str),
-        ];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        *y = py.Anonymous.Anonymous.Anonymous.lVal;
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 未在API文档中找到此函数说明
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::StrStr(const TCHAR * s,const TCHAR * str)
-    /// ```
-    pub unsafe fn StrStr(&self, s: &str, str: &str) -> Result<i32> {
-        const NAME: &str = "StrStr";
-        let mut args = [Dmsoft::bstrVal(str), Dmsoft::bstrVal(s)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 未在API文档中找到此函数说明
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::SendCommand(const TCHAR * cmd)
-    /// ```
-    pub unsafe fn SendCommand(&self, cmd: &str) -> Result<i32> {
-        const NAME: &str = "SendCommand";
-        let mut args = [Dmsoft::bstrVal(cmd)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 表示使用哪个字库文件进行识别(index范围:0-99)
-    ///
-    /// 设置之后，永久生效，除非再次设定
-    ///
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::UseDict(long index)
-    /// ```
-    ///
-    /// # Args
-    /// * `index:i32`: 字库编号(0-99)
-    ///
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    ///
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let dm_ret = dm.UseDict(1).unwrap();
-    /// ss = dm.Ocr(0,0,2000,2000,"FFFFFF-000000",1.0).unwrap();
-    /// dm_ret = dm.UseDict(0).unwrap();
-    /// ```
-    pub unsafe fn UseDict(&self, index: i32) -> Result<i32> {
-        const NAME: &str = "UseDict";
-        let mut args = [Dmsoft::longVar(index)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        Ok(result.Anonymous.lVal)
     }
 
     /// 获取注册在系统中的dm.dll的路径.
@@ -450,627 +630,43 @@ impl Dmsoft {
     /// let base_path = dm.GetBasePath().unwrap();
     /// ```
     pub unsafe fn GetBasePath(&self) -> Result<String> {
-        const NAME: &str = "GetBasePath";
+        static NAME: &str = "GetBasePath";
         let result = self.Invoke(NAME, &mut [])?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
         Ok(result.try_into().unwrap())
     }
-
-    /// 设置字库的密码,在SetDict前调用,目前的设计是,所有字库通用一个密码.
+}
+mod keyboard_mouse;
+mod pic_color;
+mod text_ocr;
+mod window;
+/// # 其他
+#[allow(non_snake_case)]
+impl Dmsoft {
+    /// 未在API文档中找到此函数说明
     /// # The function prototype
     /// ```C++
-    /// long dmsoft::SetDictPwd(const TCHAR * pwd)
+    /// long dmsoft::StrStr(const TCHAR * s,const TCHAR * str)
     /// ```
-    /// # Args
-    /// * `pwd: &str`: 字库密码
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// dm.SetDictPwd("1234").unwrap();
-    /// ```
-    /// # Note:
-    /// * 如果使用了多字库,所有字库的密码必须一样. 此函数必须在SetDict之前调用,否则会解密失败.
-    pub unsafe fn SetDictPwd(&self, pwd: &str) -> Result<i32> {
-        const NAME: &str = "SetDictPwd";
-        let mut args = [Dmsoft::bstrVal(pwd)];
-        let result = self.Invoke(NAME, &mut args).unwrap();
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 识别位图中区域(x1,y1,x2,y2)的文字
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::OcrInFile(long x1,long y1,long x2,long y2,const TCHAR * pic_name,const TCHAR * color,double sim)
-    /// ```
-    /// # Args
-    /// * `x1:i32`: 区域的左上X坐标
-    /// * `y1:i32`: 区域的左上Y坐标
-    /// * `x2:i32`: 区域的右下X坐标
-    /// * `y2:i32`: 区域的右下Y坐标
-    /// * `pic_name:&str`: 图片文件名
-    /// * `color_format:&str`: 颜色格式串. 注意，RGB和HSV,以及灰度格式都支持.
-    /// * `sim:f64`: 相似度,取值范围0.1-1.0
-    /// # Return
-    /// * `String`: 返回识别到的字符串
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let result = dm.OcrInFile(0,0,2000,2000,"test.bmp","000000-000000",1.0).unwrap();
-    /// ```
-    pub unsafe fn OcrInFile(
-        &self,
-        x1: i32,
-        y1: i32,
-        x2: i32,
-        y2: i32,
-        pic_name: &str,
-        color: &str,
-        sim: f64,
-    ) -> Result<String> {
-        const NAME: &str = "OcrInFile";
-
-        let mut args = [
-            Dmsoft::doubleVar(sim),
-            Dmsoft::bstrVal(color),
-            Dmsoft::bstrVal(pic_name),
-            Dmsoft::longVar(y2),
-            Dmsoft::longVar(x2),
-            Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1),
-        ];
-
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-
-    /// 抓取指定区域(x1, y1, x2, y2)的图像,保存为file(24位位图)
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::Capture(long x1,long y1,long x2,long y2,const TCHAR * file_name)
-    /// ```
-    /// # Args
-    /// * `x1:i32`: 区域的左上X坐标
-    /// * `y1:i32`: 区域的左上Y坐标
-    /// * `x2:i32`: 区域的右下X坐标
-    /// * `y2:i32`: 区域的右下Y坐标
-    /// * `file:&str`: 保存的文件名,保存的地方一般为SetPath中设置的目录 当然这里也可以指定全路径名.
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// dm.Capture(0,0,2000,2000,"screen.bmp").unwrap();
-    /// ```
-    pub unsafe fn Capture(
-        &self,
-        x1: i32,
-        y1: i32,
-        x2: i32,
-        y2: i32,
-        file_name: &str,
-    ) -> Result<i32> {
-        const NAME: &str = "Capture";
-        let mut args = [
-            Dmsoft::bstrVal(file_name),
-            Dmsoft::longVar(y2),
-            Dmsoft::longVar(x2),
-            Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1),
-        ];
+    pub unsafe fn StrStr(&self, s: &str, str: &str) -> Result<i32> {
+        static NAME: &str = "StrStr";
+        let mut args = [Dmsoft::bstrVal(str), Dmsoft::bstrVal(s)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
         Ok(result.Anonymous.lVal)
     }
 
-    /// 按下指定的虚拟键码
+    /// 未在API文档中找到此函数说明
     /// # The function prototype
     /// ```C++
-    /// long dmsoft::KeyPress(long vk)
+    /// long dmsoft::SendCommand(const TCHAR * cmd)
     /// ```
-    /// # Args
-    /// * `vk:KeyMap<'a>`:  虚拟按键码
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.KeyPress(keymap::KEY_A).unwrap();
-    /// ```
-    pub unsafe fn KeyPress(&self, vk: KeyMap) -> Result<i32> {
-        const NAME: &str = "KeyPress";
-        let mut args = [Dmsoft::longVar(vk.get_id())];
-
+    pub unsafe fn SendCommand(&self, cmd: &str) -> Result<i32> {
+        static NAME: &str = "SendCommand";
+        let mut args = [Dmsoft::bstrVal(cmd)];
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按住指定的虚拟键码
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::KeyDown(long vk)
-    /// ```
-    /// # Args
-    /// * `vk:KeyMap<'a>`:  虚拟按键码
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.KeyDown(keymap::KEY_A).unwrap();
-    /// ```
-    pub unsafe fn KeyDown(&self, vk: KeyMap) -> Result<i32> {
-        const NAME: &str = "KeyDown";
-        let mut args = [Dmsoft::longVar(vk.get_id())];
-
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 弹起来虚拟键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::KeyUp(long vk)
-    /// ```
-    /// # Args
-    /// * `vk:KeyMap<'a>`:  虚拟按键码
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.KeyUp(keymap::KEY_A).unwrap();
-    /// ```
-    pub unsafe fn KeyUp(&self, vk: KeyMap) -> Result<i32> {
-        const NAME: &str = "KeyUp";
-        let mut args = [Dmsoft::longVar(vk.get_id())];
-
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按下鼠标左键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::LeftClick()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.LeftClick().unwrap();
-    /// ```
-    pub unsafe fn LeftClick(&self) -> Result<i32> {
-        const NAME: &str = "LeftClick";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按下鼠标右键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::RightClick()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.RightClick().unwrap();
-    /// ```
-    pub unsafe fn RightClick(&self) -> Result<i32> {
-        const NAME: &str = "RightClick";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按下鼠标中键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::MiddleClick()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.MiddleClick().unwrap();
-    /// ```
-    pub unsafe fn MiddleClick(&self) -> Result<i32> {
-        const NAME: &str = "MiddleClick";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 双击鼠标左键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::LeftDoubleClick()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.LeftDoubleClick().unwrap();
-    /// ```
-    pub unsafe fn LeftDoubleClick(&self) -> Result<i32> {
-        const NAME: &str = "LeftDoubleClick";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按住鼠标左键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::LeftDown()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.LeftDown().unwrap();
-    /// ```
-    pub unsafe fn LeftDown(&self) -> Result<i32> {
-        const NAME: &str = "LeftDown";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 弹起鼠标左键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::LeftUp()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.LeftUp().unwrap();
-    /// ```
-    pub unsafe fn LeftUp(&self) -> Result<i32> {
-        const NAME: &str = "LeftUp";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 按住鼠标右键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::RightDown()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.RightDown().unwrap();
-    /// ```
-    pub unsafe fn RightDown(&self) -> Result<i32> {
-        const NAME: &str = "RightDown";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 弹起鼠标右键
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::RightUp()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.RightUp().unwrap();
-    /// ```
-    pub unsafe fn RightUp(&self) -> Result<i32> {
-        const NAME: &str = "RightUp";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 把鼠标移动到目的点(x,y)
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::MoveTo(long x,long y)
-    /// ```
-    /// # Args
-    /// * `x:i32`: X坐标
-    /// * `y:i32`: Y坐标
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.MoveTo(0,0).unwrap();
-    /// ```
-    pub unsafe fn MoveTo(&self, x: i32, y: i32) -> Result<i32> {
-        const NAME: &str = "MoveTo";
-        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 鼠标相对于上次的位置移动rx,ry.   
-    ///
-    /// 如果您要使前台鼠标移动的距离和指定的rx,ry一致,最好配合EnableMouseAccuracy函数来使用.
-    ///
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::MoveR(long rx,long ry)
-    /// ```
-    /// # Args
-    /// * `rx:i32`: 相对于上次的X偏移
-    /// * `ry:i32`: 相对于上次的Y偏移
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.MoveR(0,0).unwrap();
-    /// ```
-    pub unsafe fn MoveR(&self, rx: i32, ry: i32) -> Result<i32> {
-        const NAME: &str = "MoveR";
-        let mut args = [Dmsoft::longVar(ry), Dmsoft::longVar(rx)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 获取(x,y)的颜色,颜色返回格式"RRGGBB",注意,和按键的颜色格式相反
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::GetColor(long x,long y)
-    /// ```
-    /// # Args
-    /// * `x:i32`: X坐标
-    /// * `y:i32`: Y坐标
-    /// # Return
-    /// `String` 颜色字符串(注意这里都是小写字符，和工具相匹配)
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.GetColor(0,0).unwrap();
-    /// ```
-    pub unsafe fn GetColor(&self, x: i32, y: i32) -> Result<String> {
-        const NAME: &str = "GetColor";
-        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-
-    /// 获取(x,y)的颜色,颜色返回格式"BBGGRR"
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::GetColorBGR(long x,long y)
-    /// ```
-    /// # Args
-    /// * `x:i32`: X坐标
-    /// * `y:i32`: Y坐标
-    /// # Return
-    /// `String` 颜色字符串(注意这里都是小写字符，和工具相匹配)
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.GetColorBGR(0,0).unwrap();
-    /// ```
-    pub unsafe fn GetColorBGR(&self, x: i32, y: i32) -> Result<String> {
-        const NAME: &str = "GetColorBGR";
-        let mut args = [Dmsoft::longVar(y), Dmsoft::longVar(x)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-    /// 把RGB的颜色格式转换为BGR(按键格式)
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::RGB2BGR(const TCHAR * rgb_color)
-    /// ```
-    /// # Args
-    /// * `rgb_color:&str`: rgb格式的颜色字符串
-    /// # Return
-    /// `String` BGR格式的字符串
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.RGB2BGR("00FF00").unwrap();
-    /// ```
-    pub unsafe fn RGB2BGR(&self, rgb_color: &str) -> Result<String> {
-        const NAME: &str = "RGB2BGR";
-        let mut args = [Dmsoft::bstrVal(rgb_color)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-
-    /// 把BGR(按键格式)的颜色格式转换为RGB
-    /// # The function prototype
-    /// ```C++
-    /// CString dmsoft::BGR2RGB(const TCHAR * bgr_color)
-    /// ```
-    /// # Args
-    /// * `bgr_color:&str`: bgr格式的颜色字符串
-    /// # Return
-    /// `String` RGB格式的字符串
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.BGR2RGB("00FF00").unwrap();
-    /// ```
-    pub unsafe fn BGR2RGB(&self, bgr_color: &str) -> Result<String> {
-        const NAME: &str = "BGR2RGB";
-        let mut args = [Dmsoft::bstrVal(bgr_color)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        let result = ManuallyDrop::into_inner(result.Anonymous.bstrVal);
-        Ok(result.try_into().unwrap())
-    }
-
-    /// 解除绑定窗口,并释放系统资源.一般在OnScriptExit调用
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::UnBindWindow()
-    /// ```
-    /// # Args
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.UnBindWindow().unwrap();
-    /// ```
-    pub unsafe fn UnBindWindow(&self) -> Result<i32> {
-        const NAME: &str = "UnBindWindow";
-        let result = self.Invoke(NAME, &mut [])?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 比较指定坐标点(x,y)的颜色
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::CmpColor(long x,long y,const TCHAR * color,double sim)
-    /// ```
-    /// # Args
-    /// * `x:i32`: X坐标
-    /// * `y:i32`: Y坐标
-    /// * `color:&str`: 颜色字符串,可以支持偏色,多色,例如 "ffffff-202020|000000-000000" 这个表示白色偏色为202020,和黑色偏色为000000.颜色最多支持10种颜色组合. 注意，这里只支持RGB颜色.
-    /// * `sim:f64`: 相似度(0.1-1.0)
-    /// # Return
-    /// `i32`: 0: 颜色匹配 1: 颜色不匹配
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.CmpColor(200,300,"000000-000000|ff00ff-101010",0.9).unwrap();
-    /// ```
-    pub unsafe fn CmpColor(&self, x: i32, y: i32, color: &str, sim: f64) -> Result<i32> {
-        const NAME: &str = "UnBindWindow";
-        let mut args = [
-            Dmsoft::doubleVar(sim),
-            Dmsoft::bstrVal(color),
-            Dmsoft::longVar(y),
-            Dmsoft::longVar(x),
-        ];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 把窗口坐标转换为屏幕坐标
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::ClientToScreen(long x,long y,const TCHAR * color,double sim)
-    /// ```
-    /// # Args
-    /// * `hwnd:i32`: 指定的窗口句柄
-    /// * `x:&mut i32`: 窗口X坐标
-    /// * `y:&mut i32`: 窗口Y坐标
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let hwnd = 0;
-    /// let dm = Dmsoft::new();
-    /// let status = dm.ClientToScreen(hwnd,0,0) .unwrap();
-    /// ```
-    pub unsafe fn ClientToScreen(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
-        const NAME: &str = "ClientToScreen";
-        let mut px = VARIANT::default();
-        let mut py = VARIANT::default();
-
-        let mut args = [
-            Dmsoft::pvarVal(&mut py),
-            Dmsoft::pvarVal(&mut px),
-            Dmsoft::longVar(hwnd),
-        ];
-
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        *y = py.Anonymous.Anonymous.Anonymous.lVal;
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 把屏幕坐标转换为窗口坐标
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::ScreenToClient(long x,long y,const TCHAR * color,double sim)
-    /// ```
-    /// # Args
-    /// * `hwnd:i32`: 指定的窗口句柄
-    /// * `x:&mut i32`: 窗口X坐标
-    /// * `y:&mut i32`: 窗口Y坐标
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let hwnd = 0;
-    /// let dm = Dmsoft::new();
-    /// let status = dm.ScreenToClient(hwnd,0,0) .unwrap();
-    /// ```
-    pub unsafe fn ScreenToClient(&self, hwnd: i32, x: &mut i32, y: &mut i32) -> Result<i32> {
-        const NAME: &str = "ScreenToClient";
-        let mut px = VARIANT::default();
-        let mut py = VARIANT::default();
-
-        let mut args = [
-            Dmsoft::pvarVal(&mut py),
-            Dmsoft::pvarVal(&mut px),
-            Dmsoft::longVar(hwnd),
-        ];
-
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        *y = py.Anonymous.Anonymous.Anonymous.lVal;
         Ok(result.Anonymous.lVal)
     }
 
@@ -1088,7 +684,7 @@ impl Dmsoft {
         msg: &str,
         color: &str,
     ) -> Result<i32> {
-        const NAME: &str = "ShowScrMsg";
+        static NAME: &str = "ShowScrMsg";
         let mut args = [
             Dmsoft::bstrVal(color),
             Dmsoft::bstrVal(msg),
@@ -1100,125 +696,6 @@ impl Dmsoft {
 
         let result = self.Invoke(NAME, &mut args)?;
         let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定行间距,默认的行间距是1,
-    ///
-    /// 如果根据情况设定,可以提高识别精度。一般不用设定。
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::SetMinRowGap(long row_gap)
-    /// ```
-    /// # Args
-    /// * `row_gap:i32`: 最小行间距
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.SetMinRowGap(1) .unwrap();
-    /// ```
-    pub unsafe fn SetMinRowGap(&self, row_gap: i32) -> Result<i32> {
-        const NAME: &str = "SetMinRowGap";
-        let mut args = [Dmsoft::longVar(row_gap)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 高级用户使用,在识别前,如果待识别区域有多行文字,可以设定列间距,默认的列间距是0,
-    ///
-    /// 如果根据情况设定,可以提高识别精度。一般不用设定。
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::SetMinColGap(long col_gap)
-    /// ```
-    /// # Args
-    /// * `col_gap:i32`: 最小列间距
-    /// # Return
-    /// `i32`: 0: 失败 1: 成功
-    /// # Examples
-    /// ```
-    /// let dm = Dmsoft::new();
-    /// let status = dm.SetMinColGap(1) .unwrap();
-    /// ```
-    /// # Note
-    /// * 此设置如果不为0,那么将不能识别连体字 慎用.
-    pub unsafe fn SetMinColGap(&self, col_gap: i32) -> Result<i32> {
-        const NAME: &str = "SetMinColGap";
-        let mut args = [Dmsoft::longVar(col_gap)];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-
-        Ok(result.Anonymous.lVal)
-    }
-
-    /// 查找指定区域内的颜色,颜色格式"RRGGBB-DRDGDB",注意,和按键的颜色格式相反
-    /// # The function prototype
-    /// ```C++
-    /// long dmsoft::FindColor(long x1,long y1,long x2,long y2,const TCHAR * color,double sim,long dir,long * x,long * y)
-    /// ```
-    /// # Args
-    /// * `x1:i32`: 区域的左上X坐标
-    /// * `y1:i32`: 区域的左上Y坐标
-    /// * `x2:i32`: 区域的右下X坐标
-    /// * `y2:i32`: 区域的右下Y坐标
-    /// * `color:&str`: 颜色 格式为"RRGGBB-DRDGDB",比如"123456-000000|aabbcc-202020". 也可以支持反色模式. 前面加@即可. 比如"@123456-000000|aabbcc-202020". 具体可以看下放注释. 注意，这里只支持RGB颜色.
-    /// * `sim:f64`: 相似度,取值范围0.1-1.0
-    /// * `dir:i32`: 查找方向
-    ///     * 0: 从左到右,从上到下    
-    ///     * 1: 从左到右,从下到上   
-    ///     * 2: 从右到左,从上到下  
-    ///     * 3: 从右到左,从下到上     
-    ///     * 4：从中心往外查找   
-    ///     * 5: 从上到下,从左到右   
-    ///     * 6: 从上到下,从右到左  
-    ///     * 7: 从下到上,从左到右  
-    ///     * 8: 从下到上,从右到左
-    /// * `intX:&mut i32`: 返回X坐标
-    /// * `intY:&mut i32`: 返回Y坐标
-    /// # Return
-    /// `i32`: 0: 没找到 1: 找到
-    /// # Examples
-    /// ```
-    /// let (mut x,mut y) = (0,0);
-    /// let dm = Dmsoft::new();
-    /// let status = dm.FindColor(0,0,2000,2000,"123456-000000|aabbcc-030303|ddeeff-202020",1.0,0,&mut x,&mut y).unwrap();
-    /// ```
-    ///
-    pub unsafe fn FindColor(
-        &self,
-        x1: i32,
-        y1: i32,
-        x2: i32,
-        y2: i32,
-        color: &str,
-        sim: f64,
-        dir: i32,
-        x: &mut i32,
-        y: &mut i32,
-    ) -> Result<i32> {
-        const NAME: &str = "FindColor";
-        let mut px = VARIANT::default();
-        let mut py = VARIANT::default();
-        let mut args = [
-            Dmsoft::pvarVal(&mut py),
-            Dmsoft::pvarVal(&mut px),
-            Dmsoft::longVar(dir),
-            Dmsoft::doubleVar(sim),
-            Dmsoft::bstrVal(color),
-            Dmsoft::longVar(y2),
-            Dmsoft::longVar(x2),
-            Dmsoft::longVar(y1),
-            Dmsoft::longVar(x1),
-        ];
-        let result = self.Invoke(NAME, &mut args)?;
-        let result = ManuallyDrop::into_inner(result.Anonymous.Anonymous);
-        *x = px.Anonymous.Anonymous.Anonymous.lVal;
-        *y = px.Anonymous.Anonymous.Anonymous.lVal;
 
         Ok(result.Anonymous.lVal)
     }
