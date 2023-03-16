@@ -8,13 +8,36 @@ use std::{
     path::Path, ptr, sync::Mutex,
 };
 
-use once_cell::sync::OnceCell;
+// use once_cell::sync::OnceCell;
 use windows::{
     core::{BSTR, HSTRING, PCWSTR},
-    Win32::System::Com::{
-        self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0, VARIANT_0_0_0, VT_EMPTY,
-    },
+    Win32::System::Com::{self, IDispatch, DISPPARAMS, VARIANT, VARIANT_0, VARIANT_0_0},
 };
+
+#[cfg(feature = "reg")]
+// #[link(name = "DmReg", kind = "static")]
+extern "system" {
+    /// 免注册使用大漠插件 path: 为 Ascii码表示dm插件所在的路径 status: 0表示STA，1表示MTA
+    pub fn SetDllPathA(path: *const c_char, status: usize) -> usize;
+    /// 免注册使用大漠插件 path: 为 Unicode码表示插件所在的路径 status: 0表示STA，1表示MTA
+    pub fn SetDllPathW(path: *const c_char, status: usize) -> usize;
+}
+
+#[cfg(feature = "reg")]
+#[allow(missing_docs)]
+pub unsafe fn set_dll_path(dm_path: impl AsRef<Path>) -> usize {
+    let v: Vec<_> = dm_path
+        .as_ref()
+        .canonicalize()
+        .unwrap()
+        .as_os_str()
+        .encode_wide()
+        // .skip(4)// 去除全路径前面斜杠
+        .chain(Some(0))
+        .collect();
+    SetDllPathW(v.as_ptr() as _, 0)
+}
+
 // #[derive(Debug)]
 enum VTVar {
     U8(u8),
@@ -453,62 +476,6 @@ impl CastToVTVar for VARIANT {
         }
     }
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_name() {
-        let mut arg = VARIANT_0_0::default();
-        arg.vt = Com::VARENUM(Com::VT_EMPTY.0);
-
-        let var = VARIANT {
-            Anonymous: VARIANT_0 {
-                Anonymous: ManuallyDrop::new(arg),
-            },
-        };
-
-        let r = var.to_vtvar();
-        // println!("{r:?}")
-    }
-}
-
-static REG_DLL: OnceCell<libloading::Library> = OnceCell::new();
-
-#[allow(missing_docs, non_snake_case)]
-pub unsafe fn SetDllPathW(path: *const c_char, status: usize) -> usize {
-    let lib = REG_DLL.get_or_init(|| libloading::Library::new("DmReg.dll").unwrap());
-    let set_dll_path_w = lib
-        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathW")
-        .unwrap();
-    set_dll_path_w(path, status)
-}
-
-#[allow(missing_docs, non_snake_case)]
-pub unsafe fn SetDllPathA(path: *const c_char, status: usize) -> usize {
-    let lib = REG_DLL.get_or_init(|| libloading::Library::new("DmReg.dll").unwrap());
-    let set_dll_path_a = lib
-        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathA")
-        .unwrap();
-    set_dll_path_a(path, status)
-}
-
-#[allow(missing_docs)]
-pub unsafe fn set_dll_path(dm_path: impl AsRef<Path>, dm_reg_path: impl AsRef<Path>) {
-    let lib = REG_DLL.get_or_init(|| libloading::Library::new(dm_reg_path.as_ref()).unwrap());
-    let set_dll_path_w = lib
-        .get::<extern "system" fn(path: *const c_char, status: usize) -> usize>(b"SetDllPathW")
-        .unwrap();
-    let path = dm_path.as_ref().canonicalize().unwrap();
-    let v: Vec<_> = path
-        .as_os_str()
-        .encode_wide()
-        .skip(4)
-        .chain(Some(0))
-        .collect();
-    let r = set_dll_path_w(v.as_ptr() as _, 0);
-    println!("SetDllPathW result {r}");
-}
 
 #[cfg(feature = "keymap")]
 pub mod keymap;
@@ -637,6 +604,7 @@ impl Dmsoft {
         Ok(result.try_into().unwrap())
     }
 }
+
 mod keyboard_mouse;
 mod pic_color;
 mod text_ocr;
@@ -704,7 +672,7 @@ impl Dmsoft {
 }
 
 /// 辅助函数
-#[allow(non_snake_case, clippy::field_reassign_with_default)]
+#[allow(non_snake_case)]
 impl Dmsoft {
     /// 通过COM Function 名称 快捷调用
     /// # Args
@@ -752,8 +720,10 @@ impl Dmsoft {
     /// 从 &str 构建一个 VT_BSTR VARIANT
     pub unsafe fn bstrVal(var: &str) -> VARIANT {
         let s = BSTR::from_raw(HSTRING::from(var).as_ptr());
-        let mut arg = VARIANT_0_0::default();
-        arg.vt = Com::VT_BSTR;
+        let mut arg = VARIANT_0_0 {
+            vt: Com::VT_BSTR,
+            ..Default::default()
+        };
         arg.Anonymous.bstrVal = ManuallyDrop::new(s);
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -764,8 +734,10 @@ impl Dmsoft {
 
     /// 从 i32 构建一个 VT_I4 VARIANT
     pub unsafe fn longVar(var: i32) -> VARIANT {
-        let mut arg = VARIANT_0_0::default();
-        arg.vt = Com::VT_I4;
+        let mut arg = VARIANT_0_0 {
+            vt: Com::VT_I4,
+            ..Default::default()
+        };
         arg.Anonymous.lVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -778,8 +750,11 @@ impl Dmsoft {
     /// pvalVal中存放了另外一个VARIANTTARG的指针。这个被引用的VARIANTARG不能是VT_VARIANT | VT_BYREF类型。
     /// VT_BYREF|VT_VARIANT VARIANT
     pub unsafe fn pvarVal(var: *mut VARIANT) -> VARIANT {
-        let mut arg = VARIANT_0_0::default();
-        arg.vt = Com::VARENUM(Com::VT_BYREF.0 | Com::VT_VARIANT.0);
+        let mut arg = VARIANT_0_0 {
+            vt: Com::VARENUM(Com::VT_BYREF.0 | Com::VT_VARIANT.0),
+            ..Default::default()
+        };
+
         arg.Anonymous.pvarVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {
@@ -790,8 +765,11 @@ impl Dmsoft {
 
     /// 从 f64 构建一个 VT_R8 VARIANT
     pub unsafe fn doubleVar(var: f64) -> VARIANT {
-        let mut arg = VARIANT_0_0::default();
-        arg.vt = Com::VT_R8;
+        let mut arg = VARIANT_0_0 {
+            vt: Com::VT_R8,
+            ..Default::default()
+        };
+
         arg.Anonymous.dblVal = var;
         VARIANT {
             Anonymous: VARIANT_0 {

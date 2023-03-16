@@ -1,17 +1,17 @@
-
-
 use dm::Dmsoft;
 
 use windows::Win32::System::Com;
-#[allow(unused_labels)]
+// #[allow(unused_labels)]
 
 fn main() {
     unsafe {
+        // let s = r#"dm.dll"#;
+        // let path: Vec<_> = s.encode_utf16().chain(Some(0)).collect();
+        // let result = dm::SetDllPathW(path.as_ptr() as _, 0);
 
-        let s = r#"D:\Project\Rust-Project\win32com\dm.dll"#;
-
-        dm::set_dll_path(s, "DmReg.dll");
-        println!("#######################");
+        let s = r#"dm.dll"#;
+        let result = dm::set_dll_path(s);
+        println!("#######################: {result}");
 
         Com::CoInitializeEx(None, Default::default()).unwrap();
 
