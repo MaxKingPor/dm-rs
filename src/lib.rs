@@ -1,11 +1,16 @@
-#![allow(dead_code)]
+// #![allow(dead_code)]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 
 use std::{
-    collections::HashMap, ffi::c_char, mem::ManuallyDrop, os::windows::prelude::OsStrExt,
-    path::Path, ptr, sync::Mutex,
+    collections::HashMap,
+    ffi::c_char,
+    mem::ManuallyDrop,
+    os::windows::prelude::OsStrExt,
+    path::Path,
+    ptr,
+    sync::RwLock,
 };
 
 // use once_cell::sync::OnceCell;
@@ -490,7 +495,7 @@ pub struct Dmsoft {
     /// dm.dmsoft 链接实例
     obj: IDispatch,
     /// Invoke ID 缓存
-    catch: Mutex<HashMap<&'static str, i32>>,
+    catch: RwLock<HashMap<&'static str, i32>>,
 }
 
 /// 异常枚举
@@ -519,7 +524,7 @@ impl Dmsoft {
         let r = Com::CoCreateInstance(&guid, None, Com::CLSCTX_ALL)?;
         Ok(Self {
             obj: r,
-            catch: Mutex::new(HashMap::new()),
+            catch: RwLock::new(HashMap::new()),
         })
     }
 
@@ -679,18 +684,26 @@ impl Dmsoft {
     /// * `name:&'static str`: COM Function name
     /// * `args: &mut [VARIANT]` COM Function arguments
     pub unsafe fn Invoke(&self, name: &'static str, args: &mut [VARIANT]) -> Result<VARIANT> {
-        let mut map = self.catch.lock().unwrap();
-        let rgdispid = *map.entry(name).or_insert_with_key(|key| {
-            let name = HSTRING::from(*key);
+        let map = self.catch.read().unwrap();
+        let rgdispid = map.get(name).cloned();
+        drop(map);
+        let rgdispid = rgdispid.unwrap_or_else(|| {
+            let str_name = name;
+            let name = HSTRING::from(name);
             let func_name = PCWSTR::from_raw(name.as_ptr() as *mut _);
             // 在调试时解决 expect
             let mut result = 0;
             self.obj
                 .GetIDsOfNames(ptr::null(), &func_name, 1, LOCALE_USER_DEFAULT, &mut result)
                 .expect("调用 GetIDsOfNames 获取ID 异常: ");
+            self.catch
+                .write()
+                .unwrap()
+                .entry(str_name)
+                .or_insert(result);
             result
         });
-        drop(map);
+
         if rgdispid == -1 {
             return Err(Error::IdError);
         };

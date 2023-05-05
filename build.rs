@@ -7,11 +7,10 @@ fn main() {
     // 复制 文件到 输出目录
     fs::copy("dm.dll", path.join("dm.dll")).unwrap();
 
-    // println!("cargo:rustc-link-arg=/DEF:DmReg.def");
     if let Ok(env) = env::var("CARGO_FEATURE_reg") {
         println!("CARGO_FEATURE_reg {}", env);
-
-        std::process::Command::new(r#"lib.exe"#)
+        cc::windows_registry::find(&env::var("TARGET").unwrap(), "lib.exe")
+            .unwrap()
             .arg("/DEF:DmReg.def")
             .arg("/MACHINE:x86")
             .arg(format!(
